@@ -1,0 +1,91 @@
+{
+  "creativetab.politicsmod.tab": "PoliticsMod",
+
+  "block.politicsmod.founding_stone": "Камень Основания",
+  "block.politicsmod.city_stone": "Городской Камень",
+  "block.politicsmod.residential_building": "Жилой Дом",
+  "block.politicsmod.trade_warehouse": "Торговый Склад",
+  "item.politicsmod.founding_stone": "Камень Основания",
+  "item.politicsmod.city_stone": "Городской Камень",
+  "item.politicsmod.residential_building": "Жилой Дом",
+  "item.politicsmod.trade_warehouse": "Торговый Склад",
+
+  "message.politicsmod.only_creative": "PoliticsMod работает только в режиме Креатива!",
+  "message.politicsmod.territory_owned": "Это территория страны %s!",
+  "message.politicsmod.cant_break": "Вы не можете ломать блоки на чужой территории!",
+  "message.politicsmod.no_country": "У вас нет государства!",
+  "message.politicsmod.country_exists": "Страна уже существует!",
+  "message.politicsmod.zone_updated": "Зона обновлена. Жителей: %s",
+
+  "gui.politicsmod.dashboard.title": "Управление Страной",
+  "gui.politicsmod.dashboard.tab.main": "Обзор",
+  "gui.politicsmod.dashboard.tab.map": "Карта",
+  "gui.politicsmod.dashboard.balance": "Бюджет: %s$",
+  "gui.politicsmod.dashboard.no_flag": "Нет флага",
+  "gui.politicsmod.dashboard.paste_url": "Вставьте прямую ссылку (.png)",
+  "gui.politicsmod.dashboard.cities_list": "Список городов:",
+  "gui.politicsmod.dashboard.target": "Цель: %s",
+  "gui.politicsmod.dashboard.no_cities": "Нет городов",
+  "gui.politicsmod.dashboard.make_capital": "Сделать столицей",
+  "gui.politicsmod.dashboard.assign": "Присвоить чанки",
+  "gui.politicsmod.dashboard.wilderness": "Убрать город (Дикая)",
+
+  "gui.politicsmod.residential.title": "Управление домом",
+  "gui.politicsmod.residential.recalc": "Пересчитать жителей",
+  "gui.politicsmod.residential.pop": "Текущее население: %s",
+
+  "gui.politicsmod.map.country": "Страна",
+  "gui.politicsmod.map.city": "Город",
+
+  "gui.politicsmod.founding.title": "Основание Нового Города",
+  "gui.politicsmod.founding.build": "Построить город",
+  "gui.politicsmod.founding.header": "Основание Города",
+
+  "command.politicsmod.borders.toggle": "Границы: %s",
+  "command.politicsmod.borders.on": "ВКЛ",
+  "command.politicsmod.borders.off": "ВЫКЛ",
+
+  "command.politicsmod.borders.style_msg": "Стиль границ: %s",
+  "command.politicsmod.borders.style.lines": "Линии",
+  "command.politicsmod.borders.style.walls": "Стены (Прозрачные)",
+  "command.politicsmod.borders.style.corners": "Углы (Минимализм)",
+  "gui.politicsmod.hud.wilderness": "Дикая местность",
+  "gui.politicsmod.founding_state.title": "Основание Государства",
+  "gui.politicsmod.founding_state.name_hint": "Название страны",
+  "gui.politicsmod.founding_state.create": "Основать",
+  "gui.politicsmod.founding_state.header": "Основание Государства",
+  "gui.politicsmod.founding_state.name_label": "Название страны:",
+
+  "gui.politicsmod.hud.country": "Страна: %s",
+  "gui.politicsmod.hud.city": "Город: %s",
+  "gui.politicsmod.hud.balance": "Баланс: %s$",
+
+  "gui.politicsmod.residential.config_title": "Настройка Жилой Зоны",
+  "gui.politicsmod.residential.radius_x": "X Радиус",
+  "gui.politicsmod.residential.height_y": "Y Высота",
+  "gui.politicsmod.residential.radius_z": "Z Радиус",
+
+  "message.politicsmod.error.city_not_found": "Ошибка: Города '%s' не существует!",
+  "message.politicsmod.capital_set": "Новая столица: %s",
+  "message.politicsmod.country_renamed": "Страна переименована в %s",
+  "message.politicsmod.error.name_taken": "Ошибка: Имя занято или недопустимо",
+  "message.politicsmod.city_renamed": "Город переименован",
+  "message.politicsmod.no_state": "У вас нет государства!",
+  "message.politicsmod.founding_stone_hint": "Это камень основания страны. Нажмите 'K', чтобы открыть меню.",
+  "message.politicsmod.command.claimed": "Захвачено: %s",
+
+  "key.categories.politicsmod": "PoliticsMod",
+  "key.politicsmod.open_menu": "Открыть меню страны",
+
+  "command.politicsmod.help.header": "--- Помощь PoliticsMod ---",
+  "command.politicsmod.help.delete": "/politicsmod delete - Удалить вашу страну навсегда",
+  "command.politicsmod.delete.warning": "ВНИМАНИЕ: Это навсегда удалит вашу страну и все города!",
+  "command.politicsmod.delete.confirm_hint": "Напишите '/politicsmod confirm' в течение 30 сек для подтверждения.",
+  "command.politicsmod.delete.no_request": "Нет активного запроса на удаление.",
+  "command.politicsmod.delete.timeout": "Время ожидания подтверждения истекло.",
+  "command.politicsmod.delete.success": "Страна '%s' была распущена.",
+
+  "message.politicsmod.welcome": "Добро пожаловать на сервер с PoliticsMod!",
+  "message.politicsmod.welcome_hint": "Напишите /politicsmod help для списка команд.",
+  "message.politicsmod.country_exists_error": "Вы уже владеете страной: %s. Вы не можете создать вторую."
+}

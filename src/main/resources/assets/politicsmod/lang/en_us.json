@@ -1,0 +1,93 @@
+{
+  "creativetab.politicsmod.tab": "PoliticsMod",
+
+  "block.politicsmod.founding_stone": "Founding Stone",
+  "block.politicsmod.city_stone": "City Stone",
+  "block.politicsmod.residential_building": "Residential Building",
+  "block.politicsmod.trade_warehouse": "Trade Warehouse",
+  "item.politicsmod.founding_stone": "Founding Stone",
+  "item.politicsmod.city_stone": "City Stone",
+  "item.politicsmod.residential_building": "Residential Building",
+  "item.politicsmod.trade_warehouse": "Trade Warehouse",
+
+  "message.politicsmod.only_creative": "PoliticsMod works only in Creative Mode!",
+  "message.politicsmod.territory_owned": "This is territory of %s!",
+  "message.politicsmod.cant_break": "You cannot break blocks in foreign territory!",
+  "message.politicsmod.no_country": "You do not have a country!",
+  "message.politicsmod.country_exists": "Country already exists!",
+  "message.politicsmod.zone_updated": "Zone updated. Population: %s",
+
+  "gui.politicsmod.dashboard.title": "Country Dashboard",
+  "gui.politicsmod.dashboard.tab.main": "Overview",
+  "gui.politicsmod.dashboard.tab.map": "Map",
+  "gui.politicsmod.dashboard.balance": "Balance: %s$",
+  "gui.politicsmod.dashboard.no_flag": "No Flag",
+  "gui.politicsmod.dashboard.paste_url": "Paste direct link (.png)",
+  "gui.politicsmod.dashboard.cities_list": "Cities:",
+  "gui.politicsmod.dashboard.target": "Target: %s",
+  "gui.politicsmod.dashboard.no_cities": "No cities",
+  "gui.politicsmod.dashboard.make_capital": "Make Capital",
+  "gui.politicsmod.dashboard.assign": "Assign Chunks",
+  "gui.politicsmod.dashboard.wilderness": "Unclaim (Wilderness)",
+
+  "gui.politicsmod.residential.title": "Housing Management",
+  "gui.politicsmod.residential.recalc": "Recalculate",
+  "gui.politicsmod.residential.pop": "Current Population: %s",
+
+  "gui.politicsmod.map.country": "Country",
+  "gui.politicsmod.map.city": "City",
+
+  "gui.politicsmod.founding.title": "Founding a New City",
+  "gui.politicsmod.founding.build": "Build City",
+  "gui.politicsmod.founding.header": "City Founding",
+
+  "command.politicsmod.borders.toggle": "Borders: %s",
+  "command.politicsmod.borders.on": "ON",
+  "command.politicsmod.borders.off": "OFF",
+
+  "command.politicsmod.borders.style_msg": "Border Style: %s",
+  "command.politicsmod.borders.style.lines": "Lines",
+  "command.politicsmod.borders.style.walls": "Walls (Transparent)",
+  "command.politicsmod.borders.style.corners": "Corners (Minimalist)",
+  "gui.politicsmod.hud.wilderness": "Wilderness",
+  "gui.politicsmod.founding_state.title": "Founding a State",
+  "gui.politicsmod.founding_state.name_hint": "Country Name",
+  "gui.politicsmod.founding_state.create": "Found",
+  "gui.politicsmod.founding_state.header": "State Founding",
+  "gui.politicsmod.founding_state.name_label": "Country Name:",
+
+  "gui.politicsmod.hud.country": "Country: %s",
+  "gui.politicsmod.hud.city": "City: %s",
+  "gui.politicsmod.hud.balance": "Balance: %s$",
+
+  "gui.politicsmod.residential.config_title": "Housing Zone Config",
+  "gui.politicsmod.residential.radius_x": "X Radius",
+  "gui.politicsmod.residential.height_y": "Y Height",
+  "gui.politicsmod.residential.radius_z": "Z Radius",
+
+  "message.politicsmod.error.city_not_found": "Error: City '%s' not found!",
+  "message.politicsmod.capital_set": "New Capital: %s",
+  "message.politicsmod.country_renamed": "Country renamed to %s",
+  "message.politicsmod.error.name_taken": "Error: Name taken or invalid",
+  "message.politicsmod.city_renamed": "City renamed",
+  "message.politicsmod.no_state": "You do not have a state!",
+  "message.politicsmod.founding_stone_hint": "This is the Founding Stone. Press 'K' to open menu.",
+  "message.politicsmod.command.claimed": "Claimed: %s",
+
+  "key.politicsmod.open_menu": "Open Country Menu",
+  "key.categories.politicsmod": "PoliticsMod",
+
+  "command.politicsmod.help.header": "--- PoliticsMod Help ---",
+  "command.politicsmod.help.delete": "/politicsmod delete - Delete your country forever",
+  "command.politicsmod.delete.warning": "WARNING: This will permanently delete your country and all cities!",
+  "command.politicsmod.delete.confirm_hint": "Type '/politicsmod confirm' within 30s to proceed.",
+  "command.politicsmod.delete.no_request": "No pending deletion request.",
+  "command.politicsmod.delete.timeout": "Deletion request timed out.",
+  "command.politicsmod.delete.success": "Country '%s' has been dissolved.",
+
+  "message.politicsmod.welcome": "Welcome to the server running PoliticsMod!",
+  "message.politicsmod.welcome_hint": "Type /politicsmod help for commands.",
+  "message.politicsmod.country_exists_error": "You already own a country: %s. You cannot found another one."
+
+
+}

@@ -1,0 +1,29 @@
+# Main Class
+cpw.mods.bootstraplauncher.BootstrapLauncher
+
+# NeoForge Run-Type Program Arguments
+--launchTarget
+forgedatadev
+--assetIndex
+17
+--assetsDir
+C:\\Users\\dimal\\.gradle\\caches\\neoformruntime\\assets
+--gameDir
+.
+--fml.fmlVersion
+4.0.42
+--fml.mcVersion
+1.21.1
+--fml.neoForgeVersion
+21.1.216
+--fml.neoFormVersion
+20240808.144430
+
+# User Supplied Program Arguments
+--mod
+politicsmod
+--all
+--output
+C:\\Users\\dimal\\Documents\\mc_mods\\politics-mod\\src\\generated\\resources
+--existing
+C:\\Users\\dimal\\Documents\\mc_mods\\politics-mod\\src\\main\\resources

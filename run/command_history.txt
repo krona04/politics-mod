@@ -1,0 +1,11 @@
+/politicsmod help
+/politicsmod borders
+/politicsmod borders style
+/politicsmod delete
+/politicsmod confirm
+/politicsmod delete
+/politicsmod confirm
+/politicsmod delete
+/politicsmod confirm
+/politicsmod delete
+/politicsmod confirm
