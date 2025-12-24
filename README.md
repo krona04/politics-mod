@@ -63,18 +63,6 @@ The mod is fully localized in the following languages:
 
 ---
 
-## ⚖️ License
-
-This mod is licensed under the **MIT License**.
-
-* **Modpacks:** You are free to include this mod in any modpack.
-* **Source Code:** The source code is available on [GitHub](https://github.com/krona04/politics-mod). You are free to view, learn from, and modify the code.
-* **Distribution:** You may redistribute the mod, provided you include the original license file.
-
-Free for everyone to play and build upon!
-
----
-
 ## 🐛 Bug Reports
 
 Found a bug? Have a suggestion for a new building?
