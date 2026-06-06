@@ -9,10 +9,9 @@ import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-// Убрали "implements GeoBlockEntity"
+
 public class ResidentialBuildingEntity extends BlockEntity {
 
-    // Размеры зоны
     private int rangeX = 5;
     private int rangeY = 5;
     private int rangeZ = 5;

@@ -24,7 +24,7 @@ public class CityFoundationScreen extends Screen {
         int centerX = this.width / 2;
         int centerY = this.height / 2;
 
-        this.nameInput = new EditBox(this.font, centerX - 100, centerY - 20, 200, 20, Component.literal("Название города"));
+        this.nameInput = new EditBox(this.font, centerX - 100, centerY - 20, 200, 20, Component.translatable("gui.politicsmod.founding.name_hint"));
         this.nameInput.setBordered(true);
         this.addRenderableWidget(this.nameInput);
 

@@ -1,0 +1,85 @@
+# ================================
+# Minecraft Mod — .gitignore
+# ================================
+
+# --- Gradle ---
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# --- Eclipse ---
+.classpath
+.project
+.settings/
+bin/
+
+# --- VS Code ---
+.vscode/
+
+# --- macOS ---
+.DS_Store
+*.DS_Store
+
+# --- Windows ---
+Thumbs.db
+desktop.ini
+
+# --- Forge / Fabric run directories ---
+run/
+runs/
+
+# --- Forge-specific ---
+src/main/resources/META-INF/accesstransformer.cfg.bak
+forge-*.jar
+fml-*.log
+
+# --- Fabric-specific ---
+remappedSrc/
+
+# --- MixinGradle / refmaps (generated at build time) ---
+src/main/resources/*.refmap.json
+
+# --- Local Gradle properties (may contain API keys / paths) ---
+local.properties
+gradle.properties.local
+
+# --- Compiled output ---
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Logs ---
+logs/
+*.log
+crash-reports/
+
+# --- Caches ---
+.cache/
+.loom/
+
+# --- Mod pack / testing artifacts ---
+mods/
+resourcepacks/
+saves/
+screenshots/
+shaderpacks/
+options.txt
+servers.dat
+
+# --- Natives (downloaded at setup) ---
+natives/
+
+# --- Node (if you have a web-based toolchain) ---
+node_modules/
+
+# --- Python (if any scripts) ---
+__pycache__/
+*.py[cod]
+*.pyo

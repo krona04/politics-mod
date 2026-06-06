@@ -24,6 +24,6 @@ C:\\Users\\dimal\\.gradle\\caches\\neoformruntime\\assets
 politicsmod
 --all
 --output
-C:\\Users\\dimal\\Documents\\mc_mods\\politics-mod\\src\\generated\\resources
+C:\\Users\\dimal\\Desktop\\PoliticsMod\\src\\generated\\resources
 --existing
-C:\\Users\\dimal\\Documents\\mc_mods\\politics-mod\\src\\main\\resources
+C:\\Users\\dimal\\Desktop\\PoliticsMod\\src\\main\\resources

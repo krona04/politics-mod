@@ -13,6 +13,18 @@ public class ClientPoliticsData {
     public static int myBalance = 0;
     public static int borderStyle = 0;
 
+    public static String radarAlert = "";
+    private static long radarAlertExpiry = 0L;
+
+    public static void setRadarAlert(String detected) {
+        radarAlert = detected;
+        radarAlertExpiry = System.currentTimeMillis() + 5000L;
+    }
+
+    public static boolean hasActiveRadarAlert() {
+        return !radarAlert.isEmpty() && System.currentTimeMillis() < radarAlertExpiry;
+    }
+
     public static void setBorderStyle(int style) {
         borderStyle = style % 3; // Зацикливаем (0, 1, 2)
     }
@@ -55,6 +67,8 @@ public class ClientPoliticsData {
         currentCountry = "";
         currentCity = "";
         myBalance = 0;
+        radarAlert = "";
+        radarAlertExpiry = 0L;
     }
 
     public static Map<ChunkPos, Integer> getChunks() { return CHUNK_COLORS; }

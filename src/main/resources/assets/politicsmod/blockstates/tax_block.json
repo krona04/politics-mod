@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "politicsmod:block/tax_block" }
+  }
+}

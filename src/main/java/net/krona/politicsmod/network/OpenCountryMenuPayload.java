@@ -11,7 +11,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public record OpenCountryMenuPayload(String countryName, int balance, List<String> cities, String flagUrl) implements CustomPacketPayload {
+// ДОБАВИЛИ: String playerRole в Record
+public record OpenCountryMenuPayload(String countryName, int balance, List<String> cities, String flagUrl, String playerRole) implements CustomPacketPayload {
 
     public static final Type<OpenCountryMenuPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Politicsmod.MODID, "open_menu"));
 
@@ -20,6 +21,7 @@ public record OpenCountryMenuPayload(String countryName, int balance, List<Strin
             ByteBufCodecs.INT, OpenCountryMenuPayload::balance,
             ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.STRING_UTF8), OpenCountryMenuPayload::cities,
             ByteBufCodecs.STRING_UTF8, OpenCountryMenuPayload::flagUrl,
+            ByteBufCodecs.STRING_UTF8, OpenCountryMenuPayload::playerRole, // ДОБАВИЛИ СЮДА
             OpenCountryMenuPayload::new
     );
 
@@ -28,8 +30,9 @@ public record OpenCountryMenuPayload(String countryName, int balance, List<Strin
 
     public static void handle(final OpenCountryMenuPayload payload, final IPayloadContext context) {
         context.enqueueWork(() -> {
+            // ДОБАВИЛИ передачу payload.playerRole() в экран меню
             Minecraft.getInstance().setScreen(new net.krona.politicsmod.client.CountryDashboardScreen(
-                    payload.countryName, payload.balance, payload.cities, payload.flagUrl
+                    payload.countryName(), payload.balance(), payload.cities(), payload.flagUrl(), payload.playerRole()
             ));
         });
     }

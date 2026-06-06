@@ -38,5 +38,12 @@ public class PoliticsHudOverlay implements LayeredDraw.Layer {
         guiGraphics.drawString(font,
                 Component.translatable("gui.politicsmod.hud.balance", ClientPoliticsData.myBalance),
                 x, y, colorBalance);
+
+        if (ClientPoliticsData.hasActiveRadarAlert()) {
+            y += 10;
+            guiGraphics.drawString(font,
+                    Component.translatable("gui.politicsmod.hud.radar_alert", ClientPoliticsData.radarAlert),
+                    x, y, 0xFF5555);
+        }
     }
 }

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "politicsmod:block/vault_block"
+    }
+  }
+}

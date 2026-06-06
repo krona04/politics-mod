@@ -1,5 +1,11 @@
 package net.krona.politicsmod;
 
+import net.krona.politicsmod.block.TaxBlock;
+import net.krona.politicsmod.block.EmbassyBlock;
+import net.krona.politicsmod.block.RadarBlock;
+import net.krona.politicsmod.block.VaultBlock;
+import net.krona.politicsmod.block.entity.EmbassyEntity;
+import net.krona.politicsmod.block.entity.VaultEntity;
 import net.krona.politicsmod.network.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,7 +28,9 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
@@ -44,6 +52,14 @@ public class Politicsmod {
     public static final DeferredHolder<Block, Block> RESIDENTIAL_BUILDING_BLOCK = BLOCKS.register("residential_building",
             () -> new ResidentialBuildingBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion()));
 
+    public static final DeferredHolder<Block, Block> TAX_BLOCK = BLOCKS.register("tax_block",
+            () -> new TaxBlock(BlockBehaviour.Properties.of()
+                    .strength(3.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion()
+            )
+    );
+
     public static final DeferredHolder<Item, Item> FOUNDING_STONE_ITEM = ITEMS.register("founding_stone",
             () -> new net.krona.politicsmod.item.FoundingStoneItem(FOUNDING_STONE_BLOCK.get(), new Item.Properties()));
 
@@ -53,6 +69,25 @@ public class Politicsmod {
     public static final DeferredHolder<Item, Item> RESIDENTIAL_BUILDING_ITEM = ITEMS.register("residential_building",
             () -> new BlockItem(RESIDENTIAL_BUILDING_BLOCK.get(), new Item.Properties()));
 
+    public static final DeferredHolder<Item, Item> TAX_BLOCK_ITEM = ITEMS.register("tax_block",
+            () -> new BlockItem(TAX_BLOCK.get(), new Item.Properties())
+    );
+
+    public static final DeferredHolder<Block, Block> EMBASSY_BLOCK = BLOCKS.register("embassy_block",
+            () -> new EmbassyBlock(BlockBehaviour.Properties.of().mapColor(MapColor.GOLD).strength(3.5f).noOcclusion()));
+    public static final DeferredHolder<Item, Item> EMBASSY_ITEM = ITEMS.register("embassy_block",
+            () -> new BlockItem(EMBASSY_BLOCK.get(), new Item.Properties()));
+
+    public static final DeferredHolder<Block, Block> RADAR_BLOCK = BLOCKS.register("radar_block",
+            () -> new RadarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(3.5f).noOcclusion()));
+    public static final DeferredHolder<Item, Item> RADAR_ITEM = ITEMS.register("radar_block",
+            () -> new BlockItem(RADAR_BLOCK.get(), new Item.Properties()));
+
+    public static final DeferredHolder<Block, Block> VAULT_BLOCK = BLOCKS.register("vault_block",
+            () -> new VaultBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(5.0f).noOcclusion().requiresCorrectToolForDrops()));
+    public static final DeferredHolder<Item, Item> VAULT_ITEM = ITEMS.register("vault_block",
+            () -> new BlockItem(VAULT_BLOCK.get(), new Item.Properties()));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<net.krona.politicsmod.block.entity.FoundingStoneEntity>> FOUNDING_STONE_BE = BLOCK_ENTITIES.register("founding_stone",
             () -> BlockEntityType.Builder.of(net.krona.politicsmod.block.entity.FoundingStoneEntity::new, FOUNDING_STONE_BLOCK.get()).build(null));
 
@@ -60,13 +95,19 @@ public class Politicsmod {
             () -> BlockEntityType.Builder.of(net.krona.politicsmod.block.entity.ResidentialBuildingEntity::new, RESIDENTIAL_BUILDING_BLOCK.get()).build(null));
 
     public static final DeferredHolder<Block, Block> TRADE_WAREHOUSE_BLOCK = BLOCKS.register("trade_warehouse",
-            () -> new net.krona.politicsmod.TradeWarehouseBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.5f)));
+            () -> new net.krona.politicsmod.TradeWarehouseBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.5f).noOcclusion()));
 
     public static final DeferredHolder<Item, Item> TRADE_WAREHOUSE_ITEM = ITEMS.register("trade_warehouse",
             () -> new BlockItem(TRADE_WAREHOUSE_BLOCK.get(), new Item.Properties()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<net.krona.politicsmod.block.entity.TradeWarehouseEntity>> TRADE_WAREHOUSE_BE = BLOCK_ENTITIES.register("trade_warehouse",
             () -> BlockEntityType.Builder.of(net.krona.politicsmod.block.entity.TradeWarehouseEntity::new, TRADE_WAREHOUSE_BLOCK.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EmbassyEntity>> EMBASSY_BE = BLOCK_ENTITIES.register("embassy_block",
+            () -> BlockEntityType.Builder.of(EmbassyEntity::new, EMBASSY_BLOCK.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<VaultEntity>> VAULT_BE = BLOCK_ENTITIES.register("vault_block",
+            () -> BlockEntityType.Builder.of(VaultEntity::new, VAULT_BLOCK.get()).build(null));
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
@@ -79,6 +120,10 @@ public class Politicsmod {
                         output.accept(CITY_STONE_ITEM.get());
                         output.accept(RESIDENTIAL_BUILDING_ITEM.get());
                         // output.accept(TRADE_WAREHOUSE_ITEM.get());
+                        output.accept(TAX_BLOCK_ITEM.get());
+                        output.accept(EMBASSY_ITEM.get());
+                        output.accept(RADAR_ITEM.get());
+                        output.accept(VAULT_ITEM.get());
                     }).build());
 
     public Politicsmod(IEventBus modEventBus, ModContainer modContainer) {
@@ -120,5 +165,9 @@ public class Politicsmod {
         registrar.playToServer(ManagePoliticsPayload.TYPE, ManagePoliticsPayload.CODEC, ManagePoliticsPayload::handle);
 
         registrar.playToServer(UpdateBuildingPayload.TYPE, UpdateBuildingPayload.CODEC, UpdateBuildingPayload::handle);
+
+        registrar.playToClient(net.krona.politicsmod.network.SyncRadarPayload.TYPE,
+                net.krona.politicsmod.network.SyncRadarPayload.CODEC,
+                net.krona.politicsmod.network.SyncRadarPayload::handle);
     }
 }

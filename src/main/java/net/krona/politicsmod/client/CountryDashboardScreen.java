@@ -42,12 +42,15 @@ public class CountryDashboardScreen extends Screen {
     private final int scale = 10;
     private int selectedCityIndex = 0;
 
-    public CountryDashboardScreen(String name, int bal, List<String> cities, String flagUrl) {
-        super(Component.translatable("gui.politicsmod.dashboard.title"));
-        this.countryName = name;
-        this.balance = bal;
+    private final String playerRole; // Сохраняем роль
+
+    public CountryDashboardScreen(String countryName, int balance, List<String> cities, String flagUrl, String playerRole) {
+        super(Component.literal(countryName));
+        this.countryName = countryName;
+        this.balance = balance;
         this.cities = cities;
         this.flagUrl = flagUrl;
+        this.playerRole = playerRole; // Записываем роль
     }
 
     @Override
@@ -112,13 +115,20 @@ public class CountryDashboardScreen extends Screen {
         boolean isMain = (activeTab == 0);
         boolean isMap = (activeTab == 1);
 
-        if (urlInput != null) urlInput.visible = isMain;
-        if (btnSaveUrl != null) btnSaveUrl.visible = isMain;
+        // Проверяем права
+        boolean isLeader = "LEADER".equals(playerRole);
+        boolean isMayor = "MAYOR".equals(playerRole);
+        boolean canManageCities = isLeader || isMayor;
 
-        if (btnCycleCity != null) btnCycleCity.visible = isMap;
-        if (btnSetCapital != null) btnSetCapital.visible = isMap;
-        if (btnAssignCity != null) btnAssignCity.visible = isMap;
-        if (btnAssignWild != null) btnAssignWild.visible = isMap;
+        // Вкладка "Обзор": Флаг может менять только Лидер
+        if (urlInput != null) urlInput.visible = isMain && isLeader;
+        if (btnSaveUrl != null) btnSaveUrl.visible = isMain && isLeader;
+
+        // Вкладка "Карта":
+        if (btnCycleCity != null) btnCycleCity.visible = isMap && canManageCities;
+        if (btnSetCapital != null) btnSetCapital.visible = isMap && isLeader; // Столицу ставит только Лидер
+        if (btnAssignCity != null) btnAssignCity.visible = isMap && canManageCities; // Город расширяет Лидер и Мэр
+        if (btnAssignWild != null) btnAssignWild.visible = isMap && isLeader; // Страну расширяет только Лидер
     }
 
     // --- ЛОГИКА ---
@@ -167,7 +177,16 @@ public class CountryDashboardScreen extends Screen {
     }
 
     private void renderMainTab(GuiGraphics g, int cx, int startY) {
+        // Отображаем роль игрока
+        String localizedRole = switch (playerRole) {
+            case "LEADER" -> "Лидер";
+            case "MAYOR" -> "Мэр";
+            default -> "Гражданин";
+        };
+        g.drawCenteredString(this.font, "Роль: §b" + localizedRole, cx, startY - 2, 0xFFFFFF);
+
         g.drawCenteredString(this.font, Component.translatable("gui.politicsmod.dashboard.balance", "§a" + balance).getString(), cx, startY + 10, 0xFFFFFF);
+
         if (flagUrl != null && !flagUrl.isEmpty()) {
             ResourceLocation texture = FlagTextureManager.getTexture(flagUrl);
             int size = 64;
@@ -181,7 +200,12 @@ public class CountryDashboardScreen extends Screen {
         } else {
             g.drawCenteredString(font, Component.translatable("gui.politicsmod.dashboard.no_flag"), cx, startY + 50, 0xAAAAAA);
         }
-        g.drawCenteredString(this.font, Component.translatable("gui.politicsmod.dashboard.paste_url"), cx, startY + 115, 0xAAAAAA);
+
+        // Текст про URL показываем только Лидеру
+        if ("LEADER".equals(playerRole)) {
+            g.drawCenteredString(this.font, Component.translatable("gui.politicsmod.dashboard.paste_url"), cx, startY + 115, 0xAAAAAA);
+        }
+
         int listY = startY + 135;
         g.drawString(this.font, Component.translatable("gui.politicsmod.dashboard.cities_list"), cx - 110, listY, 0xFFFFFF);
         if (cities.isEmpty()) {

@@ -38,7 +38,7 @@ public class PoliticsEvents {
         if (manager == null) return;
 
         ChunkPos pos = player.chunkPosition();
-        String currentCountry = manager.getCountryAt(pos);
+        String currentCountry = manager.getCountryNameAt(pos);
         String currentCity = manager.getCityAt(pos);
 
         String ownedCountry = manager.getCountryByOwner(player.getUUID());

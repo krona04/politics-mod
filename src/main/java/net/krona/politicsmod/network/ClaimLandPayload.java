@@ -2,6 +2,9 @@ package net.krona.politicsmod.network;
 
 import net.krona.politicsmod.Politicsmod;
 import net.krona.politicsmod.PoliticsManager;
+import net.krona.politicsmod.politics.Country;
+import net.krona.politicsmod.politics.CountryRole;
+
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -11,6 +14,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -33,24 +37,70 @@ public record ClaimLandPayload(BlockPos center, String countryName, String cityN
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             PoliticsManager manager = PoliticsManager.get(player.level());
+            if (manager == null) return;
 
-            if (manager != null) {
-                if (payload.isCityClaim) {
-                    if (!manager.hasCity(payload.countryName, payload.cityName)) {
-                        player.sendSystemMessage(Component.translatable("message.politicsmod.error.city_not_found", payload.cityName).withStyle(ChatFormatting.RED));
-                        return;
-                    }
+            String playerCountryName = manager.getPlayerCountry(player.getUUID());
+            if (playerCountryName == null || !playerCountryName.equals(payload.countryName())) {
+                player.sendSystemMessage(Component.translatable("message.politicsmod.claim.not_your_country").withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            Country country = manager.getCountry(playerCountryName);
+            CountryRole role = country.getRole(player.getUUID());
+            ChunkPos chunkPos = new ChunkPos(payload.center());
+            String currentOwner = manager.getCountryNameAt(chunkPos);
+
+            if (payload.isCityClaim()) {
+                if (role != CountryRole.LEADER && role != CountryRole.MAYOR) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.leader_mayor_only").withStyle(ChatFormatting.RED));
+                    return;
+                }
+                if (!manager.hasCity(playerCountryName, payload.cityName())) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.error.city_not_found", payload.cityName()).withStyle(ChatFormatting.RED));
+                    return;
+                }
+                if (currentOwner == null || !currentOwner.equals(playerCountryName)) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.city_on_claimed_only").withStyle(ChatFormatting.RED));
+                    return;
+                }
+                if (manager.getCityAt(chunkPos) != null) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.chunk_other_city").withStyle(ChatFormatting.RED));
+                    return;
                 }
 
-                String targetCity = payload.isCityClaim ? payload.cityName : "";
+                int CITY_CLAIM_PRICE = 100;
+                if (country.balance < CITY_CLAIM_PRICE) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.no_funds_city", CITY_CLAIM_PRICE).withStyle(ChatFormatting.RED));
+                    return;
+                }
 
-                net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(payload.center);
+                country.balance -= CITY_CLAIM_PRICE;
+                manager.claimChunk(chunkPos, 0, playerCountryName, payload.cityName());
+                player.sendSystemMessage(Component.translatable("message.politicsmod.claim.city_expanded", CITY_CLAIM_PRICE).withStyle(ChatFormatting.GREEN));
 
-                manager.claimChunk(chunkPos, 0, payload.countryName, targetCity);
+            } else {
+                if (role != CountryRole.LEADER) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.leader_only").withStyle(ChatFormatting.RED));
+                    return;
+                }
+                if (currentOwner != null) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.chunk_taken").withStyle(ChatFormatting.RED));
+                    return;
+                }
 
-                int newColor = manager.getColorForChunk(chunkPos);
-                PacketDistributor.sendToPlayer(player, new SyncChunkPayload(chunkPos, newColor));
+                int CLAIM_PRICE = 500;
+                if (country.balance < CLAIM_PRICE) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.no_funds_country", CLAIM_PRICE).withStyle(ChatFormatting.RED));
+                    return;
+                }
+
+                country.balance -= CLAIM_PRICE;
+                manager.claimChunk(chunkPos, 0, playerCountryName, null);
+                player.sendSystemMessage(Component.translatable("message.politicsmod.claim.country_expanded", CLAIM_PRICE).withStyle(ChatFormatting.GREEN));
             }
+
+            int newColor = manager.getColorForChunk(chunkPos);
+            PacketDistributor.sendToPlayer(player, new SyncChunkPayload(chunkPos, newColor));
         });
     }
 }

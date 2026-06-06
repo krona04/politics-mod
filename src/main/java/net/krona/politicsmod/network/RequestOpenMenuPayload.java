@@ -2,6 +2,9 @@ package net.krona.politicsmod.network;
 
 import net.krona.politicsmod.Politicsmod;
 import net.krona.politicsmod.PoliticsManager;
+// Импортируем класс Страны
+import net.krona.politicsmod.politics.Country;
+
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -25,14 +28,22 @@ public record RequestOpenMenuPayload() implements CustomPacketPayload {
             if (context.player() instanceof ServerPlayer player) {
                 PoliticsManager manager = PoliticsManager.get(player.level());
                 if (manager != null) {
-                    String country = manager.getCountryByOwner(player.getUUID());
-                    if (country != null) {
-                        int balance = manager.getBalance(country);
-                        var cities = manager.getCities(country);
 
-                        String flagUrl = manager.getFlagUrl(country);
+                    // 1. ИСПОЛЬЗУЕМ НОВЫЙ МЕТОД (Ищет страну для любого жителя)
+                    String countryName = manager.getPlayerCountry(player.getUUID());
 
-                        PacketDistributor.sendToPlayer(player, new OpenCountryMenuPayload(country, balance, cities, flagUrl));
+                    if (countryName != null) {
+                        Country country = manager.getCountry(countryName);
+
+                        int balance = country.balance;
+                        var cities = manager.getCities(countryName);
+                        String flagUrl = manager.getFlagUrl(countryName);
+
+                        // 2. Узнаем роль игрока и превращаем её в строку ("LEADER", "MAYOR", "CITIZEN")
+                        String roleName = country.getRole(player.getUUID()).name();
+
+                        // 3. Отправляем всё это в клиентское меню (добавили roleName в конце)
+                        PacketDistributor.sendToPlayer(player, new OpenCountryMenuPayload(countryName, balance, cities, flagUrl, roleName));
                     } else {
                         player.sendSystemMessage(Component.translatable("message.politicsmod.no_state").withStyle(ChatFormatting.RED));
                     }

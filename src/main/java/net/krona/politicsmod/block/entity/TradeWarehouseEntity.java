@@ -24,7 +24,7 @@ public class TradeWarehouseEntity extends BaseContainerBlockEntity {
 
     @Override
     protected Component getDefaultName() {
-        return Component.literal("Торговый склад");
+        return Component.translatable("block.politicsmod.trade_warehouse");
     }
 
     @Override
