@@ -120,11 +120,14 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 
 ## 🌍 Localization
 
-Fully localized in four languages — all in-game messages, HUD, and GUI labels respect the player's language setting:
+Fully localized in seven languages — all in-game messages, HUD, and GUI labels respect the player's language setting:
 
 | Language | Code |
 |---|---|
 | English | `en_us` |
+| German | `de_de` |
+| French | `fr_fr` |
+| Spanish | `es_es` |
 | Russian | `ru_ru` |
 | Ukrainian | `uk_ua` |
 | Polish | `pl_pl` |
