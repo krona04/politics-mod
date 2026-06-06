@@ -66,6 +66,11 @@
   "gui.politicsmod.embassy.status_unlinked": "Посольство не привязано. Используйте /politicsmod embassy link <страна>",
   "gui.politicsmod.vault.status": "Резерв хранилища: %d$ | Бонус к лимиту: +%d$ | Лимит казны: %d$",
 
+  "gui.politicsmod.role.leader": "Лидер",
+  "gui.politicsmod.role.mayor": "Мэр",
+  "gui.politicsmod.role.citizen": "Гражданин",
+  "gui.politicsmod.role.guest": "Гость",
+
   "gui.politicsmod.info.country": "Государство: %s",
   "gui.politicsmod.info.role": "Роль: %s",
   "gui.politicsmod.info.treasury": "Казна: %s$",

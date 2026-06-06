@@ -66,6 +66,11 @@
   "gui.politicsmod.embassy.status_unlinked": "Ambasada niepowiązana. Użyj /politicsmod embassy link <kraj>",
   "gui.politicsmod.vault.status": "Rezerwa skarbca: %d$ | Bonus do limitu: +%d$ | Limit skarbu: %d$",
 
+  "gui.politicsmod.role.leader": "Lider",
+  "gui.politicsmod.role.mayor": "Burmistrz",
+  "gui.politicsmod.role.citizen": "Obywatel",
+  "gui.politicsmod.role.guest": "Gość",
+
   "gui.politicsmod.info.country": "Państwo: %s",
   "gui.politicsmod.info.role": "Rola: %s",
   "gui.politicsmod.info.treasury": "Skarbiec: %s$",

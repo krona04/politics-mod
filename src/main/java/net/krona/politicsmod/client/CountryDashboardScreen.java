@@ -179,11 +179,12 @@ public class CountryDashboardScreen extends Screen {
     private void renderMainTab(GuiGraphics g, int cx, int startY) {
         // Отображаем роль игрока
         String localizedRole = switch (playerRole) {
-            case "LEADER" -> "Лидер";
-            case "MAYOR" -> "Мэр";
-            default -> "Гражданин";
+            case "LEADER" -> Component.translatable("gui.politicsmod.role.leader").getString();
+            case "MAYOR"  -> Component.translatable("gui.politicsmod.role.mayor").getString();
+            case "GUEST"  -> Component.translatable("gui.politicsmod.role.guest").getString();
+            default       -> Component.translatable("gui.politicsmod.role.citizen").getString();
         };
-        g.drawCenteredString(this.font, "Роль: §b" + localizedRole, cx, startY - 2, 0xFFFFFF);
+        g.drawCenteredString(this.font, Component.translatable("gui.politicsmod.info.role", "§b" + localizedRole).getString(), cx, startY - 2, 0xFFFFFF);
 
         g.drawCenteredString(this.font, Component.translatable("gui.politicsmod.dashboard.balance", "§a" + balance).getString(), cx, startY + 10, 0xFFFFFF);
 

@@ -66,6 +66,11 @@
   "gui.politicsmod.embassy.status_unlinked": "Embajada no vinculada. Usa /politicsmod embassy link <país>",
   "gui.politicsmod.vault.status": "Reserva del cofre: %d$ | Bono de capacidad: +%d$ | Límite nacional: %d$",
 
+  "gui.politicsmod.role.leader": "Líder",
+  "gui.politicsmod.role.mayor": "Alcalde",
+  "gui.politicsmod.role.citizen": "Ciudadano",
+  "gui.politicsmod.role.guest": "Invitado",
+
   "gui.politicsmod.info.country": "País: %s",
   "gui.politicsmod.info.role": "Rol: %s",
   "gui.politicsmod.info.treasury": "Tesoro: %s$",

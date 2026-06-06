@@ -66,6 +66,11 @@
   "gui.politicsmod.embassy.status_unlinked": "Embassy not linked. Use /politicsmod embassy link <country>",
   "gui.politicsmod.vault.status": "Vault reserve: %d$ | Cap bonus: +%d$ | Country limit: %d$",
 
+  "gui.politicsmod.role.leader": "Leader",
+  "gui.politicsmod.role.mayor": "Mayor",
+  "gui.politicsmod.role.citizen": "Citizen",
+  "gui.politicsmod.role.guest": "Guest",
+
   "gui.politicsmod.info.country": "Country: %s",
   "gui.politicsmod.info.role": "Role: %s",
   "gui.politicsmod.info.treasury": "Treasury: %s$",
