@@ -1,12 +1,22 @@
 # ================================
-# Minecraft Mod — .gitignore
+# PoliticsMod (Architectury) — .gitignore
 # ================================
 
 # --- Gradle ---
+# Matches the root and every module (common/, fabric/, neoforge/)
 .gradle/
 build/
 out/
 !gradle/wrapper/gradle-wrapper.jar
+
+# --- Loom / Architectury caches ---
+.loom/
+.architectury-transformer/
+remappedSrc/
+
+# --- Dev run directories (worlds, logs, configs, crash reports) ---
+run/
+runs/
 
 # --- IntelliJ IDEA ---
 .idea/
@@ -23,63 +33,19 @@ bin/
 # --- VS Code ---
 .vscode/
 
-# --- macOS ---
+# --- OS ---
 .DS_Store
-*.DS_Store
-
-# --- Windows ---
 Thumbs.db
 desktop.ini
 
-# --- Forge / Fabric run directories ---
-run/
-runs/
-
-# --- Forge-specific ---
-src/main/resources/META-INF/accesstransformer.cfg.bak
-forge-*.jar
-fml-*.log
-
-# --- Fabric-specific ---
-remappedSrc/
-
-# --- MixinGradle / refmaps (generated at build time) ---
-src/main/resources/*.refmap.json
-
-# --- Local Gradle properties (may contain API keys / paths) ---
-local.properties
-gradle.properties.local
-
-# --- Compiled output ---
+# --- Build outputs and logs ---
 *.class
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
-
-# --- Logs ---
-logs/
 *.log
+logs/
 crash-reports/
 
-# --- Caches ---
-.cache/
-.loom/
-
-# --- Mod pack / testing artifacts ---
-mods/
-resourcepacks/
-saves/
-screenshots/
-shaderpacks/
-options.txt
-servers.dat
-
-# --- Natives (downloaded at setup) ---
-natives/
-
-# --- Node (if you have a web-based toolchain) ---
-node_modules/
-
-# --- Python (if any scripts) ---
-__pycache__/
-*.py[cod]
-*.pyo
+# --- Local overrides (may contain paths or tokens) ---
+local.properties
+gradle.properties.local

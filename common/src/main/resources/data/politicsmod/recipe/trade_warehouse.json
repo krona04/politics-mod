@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PGP",
+    "GCG",
+    "PGP"
+  ],
+  "key": {
+    "P": { "tag": "minecraft:planks" },
+    "G": { "item": "minecraft:gold_ingot" },
+    "C": { "item": "minecraft:chest" }
+  },
+  "result": {
+    "id": "politicsmod:trade_warehouse",
+    "count": 1
+  }
+}

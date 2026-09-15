@@ -1,7 +1,0 @@
-{
-  "parent": "block/cube_all",
-  "textures": {
-    "all": "politicsmod:block/founding_stone",
-    "particle": "politicsmod:block/founding_stone"
-  }
-}

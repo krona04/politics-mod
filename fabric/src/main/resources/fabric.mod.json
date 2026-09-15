@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "politicsmod",
+  "version": "${version}",
+  "name": "PoliticsMod",
+  "description": "Political systems, economy, diplomacy and city building for Minecraft.",
+  "authors": [
+    "Krona04"
+  ],
+  "contact": {
+    "homepage": "https://github.com/dumitru04/PoliticsMod",
+    "sources": "https://github.com/dumitru04/PoliticsMod",
+    "issues": "https://github.com/dumitru04/PoliticsMod/issues"
+  },
+  "license": "GPL-3.0-only",
+  "icon": "assets/politicsmod/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.krona.politicsmod.fabric.PoliticsmodFabric"
+    ],
+    "client": [
+      "net.krona.politicsmod.fabric.client.PoliticsmodFabricClient"
+    ]
+  },
+  "mixins": [
+    "politicsmod.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "architectury": ">=13.0.11",
+    "fabric-api": "*",
+    "geckolib": "*"
+  }
+}

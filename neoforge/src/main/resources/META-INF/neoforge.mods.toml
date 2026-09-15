@@ -1,0 +1,45 @@
+modLoader = "javafml"
+loaderVersion = "[2,)"
+issueTrackerURL = "https://github.com/dumitru04/PoliticsMod/issues"
+license = "GNU GPL 3.0"
+
+[[mods]]
+modId = "politicsmod"
+version = "${version}"
+displayName = "PoliticsMod"
+authors = "Krona04"
+description = '''
+Political systems, economy, diplomacy and city building for Minecraft.
+'''
+#logoFile = "title.png"
+
+[[dependencies.politicsmod]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.politicsmod]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.politicsmod]]
+modId = "architectury"
+type = "required"
+versionRange = "[13.0.11,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.politicsmod]]
+modId = "geckolib"
+type = "required"
+versionRange = "[4.8,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[mixins]]
+config = "politicsmod.mixins.json"
