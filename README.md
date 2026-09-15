@@ -202,33 +202,6 @@ Fully localized in seven languages — all in-game messages, HUD and GUI labels 
 
 ---
 
-## 📋 Changelog
-
-The full version history is in **[CHANGELOG.md](CHANGELOG.md)**.
-
-**Latest — v0.3:** Fabric support, inter-country market (Trade Warehouse), server config, new Citizens / Diplomacy / Economy dashboard tabs, German / French / Spanish, and a fix for the dedicated server crash.
-
----
-
-## 🛠️ Building from Source
-
-Requires JDK 21.
-
-```bash
-./gradlew build
-```
-
-Output jars:
-
-```
-fabric/build/libs/politicsmod-fabric-0.3.jar
-neoforge/build/libs/politicsmod-neoforge-0.3.jar
-```
-
-Notes on the multiloader setup are in [PORTING.md](PORTING.md).
-
----
-
 ## ⚖️ License
 
 Licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
