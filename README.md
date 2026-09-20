@@ -8,8 +8,8 @@
 >
 > This mod is currently in **Early Access (v0.3)**. Features are subject to change and bugs may occur.
 >
-> * **Loaders:** NeoForge & Fabric
-> * **Minecraft Version:** 1.21.1
+> * **Loaders:** NeoForge, Forge (1.20.1) & Fabric
+> * **Minecraft Version:** 1.21.1 & 1.20.1
 > * **Game Mode:** Designed for **Creative Mode** & **Roleplay (RP) Servers**. The Trade Warehouse also works in **Survival**.
 
 > ### Required
