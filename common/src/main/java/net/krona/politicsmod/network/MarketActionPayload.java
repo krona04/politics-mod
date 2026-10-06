@@ -16,8 +16,9 @@ import net.minecraft.server.level.ServerPlayer;
  * @param action    MarketService.ACTION_LIST / ACTION_BUY / ACTION_CANCEL
  * @param listingId listing id (buy and remove)
  * @param price     price (listing the held item)
+ * @param stateMode listing: sell on behalf of the country; buying: pay from the country's treasury
  */
-public record MarketActionPayload(int action, long listingId, int price) implements CustomPacketPayload {
+public record MarketActionPayload(int action, long listingId, int price, boolean stateMode) implements CustomPacketPayload {
 
     public static final Type<MarketActionPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(Politicsmod.MODID, "market_action"));
@@ -26,6 +27,7 @@ public record MarketActionPayload(int action, long listingId, int price) impleme
             ByteBufCodecs.VAR_INT, MarketActionPayload::action,
             ByteBufCodecs.VAR_LONG, MarketActionPayload::listingId,
             ByteBufCodecs.VAR_INT, MarketActionPayload::price,
+            ByteBufCodecs.BOOL, MarketActionPayload::stateMode,
             MarketActionPayload::new);
 
     @Override
@@ -36,7 +38,7 @@ public record MarketActionPayload(int action, long listingId, int price) impleme
     public static void handle(final MarketActionPayload payload, final NetworkManager.PacketContext context) {
         context.queue(() -> {
             if (context.getPlayer() instanceof ServerPlayer player) {
-                MarketService.handleAction(player, payload.action(), payload.listingId(), payload.price());
+                MarketService.handleAction(player, payload.action(), payload.listingId(), payload.price(), payload.stateMode());
             }
         });
     }

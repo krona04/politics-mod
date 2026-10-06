@@ -27,7 +27,13 @@ public record UpdateBuildingPayload(BlockPos pos, int x, int y, int z) implement
 
     public static void handle(final UpdateBuildingPayload payload, final NetworkManager.PacketContext context) {
         context.queue(() -> {
-            var level = context.getPlayer().level();
+            var player = context.getPlayer();
+            var level = player.level();
+            // Only a player standing at the building, and allowed to use blocks there, may change its zone.
+            // Without this a client could send any coordinates and make the server load far-away chunks.
+            if (!BlockReach.isAt(player, payload.pos, net.krona.politicsmod.registry.ModBlocks.RESIDENTIAL_BUILDING.get())) return;
+            var mgr = net.krona.politicsmod.PoliticsManager.get(level);
+            if (mgr != null && net.krona.politicsmod.protection.Protection.interactDenied(mgr, player, payload.pos) != null) return;
             if (level.getBlockEntity(payload.pos) instanceof ResidentialBuildingEntity entity) {
                 entity.setSize(payload.x, payload.y, payload.z);
                 context.getPlayer().sendSystemMessage(Component.translatable("message.politicsmod.zone_updated", entity.getPop()));

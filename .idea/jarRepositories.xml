@@ -66,5 +66,20 @@
       <option name="name" value="NeoForged" />
       <option name="url" value="https://maven.neoforged.net/releases" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="BlueMap" />
+      <option name="name" value="BlueMap" />
+      <option name="url" value="https://repo.bluecolored.de/releases" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="Dynmap" />
+      <option name="name" value="Dynmap" />
+      <option name="url" value="https://repo.mikeprimm.com/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="Modrinth" />
+      <option name="name" value="Modrinth" />
+      <option name="url" value="https://api.modrinth.com/maven" />
+    </remote-repository>
   </component>
 </project>

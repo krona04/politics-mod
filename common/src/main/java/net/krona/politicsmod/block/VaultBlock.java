@@ -8,7 +8,13 @@ import net.krona.politicsmod.politics.Country;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
+import net.krona.politicsmod.ModCommands;
+import net.krona.politicsmod.economy.WalletService;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -39,9 +45,23 @@ public class VaultBlock extends Block implements EntityBlock {
     }
 
     @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+                                              InteractionHand hand, BlockHitResult hit) {
+        Item currency = WalletService.exchangeItem();
+        if (currency == null || !stack.is(currency) || hand != InteractionHand.MAIN_HAND) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+            PoliticsManager manager = PoliticsManager.at(level);
+            if (manager != null) ModCommands.exchangeFromHand(serverPlayer, manager, stack.getCount());
+        }
+        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide) {
-            PoliticsManager manager = PoliticsManager.get(level);
+            PoliticsManager manager = PoliticsManager.at(level);
             if (manager != null) {
                 String countryName = manager.getCountryNameAt(new ChunkPos(pos));
                 if (countryName != null) {
@@ -66,7 +86,7 @@ public class VaultBlock extends Block implements EntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
         if (!level.isClientSide() && placer instanceof Player player) {
-            PoliticsManager manager = PoliticsManager.get(level);
+            PoliticsManager manager = PoliticsManager.at(level);
             if (manager != null) {
                 ChunkPos chunk = new ChunkPos(pos);
                 String countryName = manager.getCountryNameAt(chunk);
@@ -94,7 +114,7 @@ public class VaultBlock extends Block implements EntityBlock {
     public void onRemove(BlockState state, Level level, BlockPos pos,
                          BlockState newState, boolean isMoving) {
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            PoliticsManager manager = PoliticsManager.get(level);
+            PoliticsManager manager = PoliticsManager.at(level);
             if (manager != null) {
                 String countryName = manager.getCountryNameAt(new ChunkPos(pos));
                 if (countryName != null) {

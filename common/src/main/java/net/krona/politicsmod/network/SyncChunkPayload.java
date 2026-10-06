@@ -1,7 +1,6 @@
 package net.krona.politicsmod.network;
 
 import net.krona.politicsmod.Politicsmod;
-import net.krona.politicsmod.client.ClientPoliticsData;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -10,7 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import dev.architectury.networking.NetworkManager;
 
-public record SyncChunkPayload(ChunkPos pos, int color) implements CustomPacketPayload {
+/** Owner of one chunk (server -> client). An empty country means the chunk is wilderness again. */
+public record SyncChunkPayload(ChunkPos pos, int color, String country, String city) implements CustomPacketPayload {
 
     public static final Type<SyncChunkPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Politicsmod.MODID, "sync_chunk"));
 
@@ -19,6 +19,8 @@ public record SyncChunkPayload(ChunkPos pos, int color) implements CustomPacketP
     public static final StreamCodec<ByteBuf, SyncChunkPayload> CODEC = StreamCodec.composite(
             CHUNK_POS_CODEC, SyncChunkPayload::pos,
             ByteBufCodecs.INT, SyncChunkPayload::color,
+            ByteBufCodecs.STRING_UTF8, SyncChunkPayload::country,
+            ByteBufCodecs.STRING_UTF8, SyncChunkPayload::city,
             SyncChunkPayload::new
     );
 
@@ -26,8 +28,7 @@ public record SyncChunkPayload(ChunkPos pos, int color) implements CustomPacketP
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
     public static void handle(final SyncChunkPayload payload, final NetworkManager.PacketContext context) {
-        context.queue(() -> {
-            net.krona.politicsmod.client.ClientPoliticsData.handleChunkSync(payload.pos(), payload.color());
-        });
+        context.queue(() -> net.krona.politicsmod.client.ClientPoliticsData.handleChunkSync(
+                payload.pos(), payload.color(), payload.country(), payload.city()));
     }
 }

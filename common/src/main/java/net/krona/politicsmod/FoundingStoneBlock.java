@@ -34,11 +34,6 @@ public class FoundingStoneBlock extends Block implements EntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!player.isCreative()) {
-            player.displayClientMessage(Component.translatable("message.politicsmod.only_creative").withStyle(ChatFormatting.RED), true);
-            return InteractionResult.FAIL;
-        }
-
         if (!level.isClientSide) {
             net.krona.politicsmod.PoliticsManager manager = net.krona.politicsmod.PoliticsManager.get(level);
             String existingCountry = manager.getCountryByOwner(player.getUUID());

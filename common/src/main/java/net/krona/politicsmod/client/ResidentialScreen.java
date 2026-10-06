@@ -1,19 +1,24 @@
 package net.krona.politicsmod.client;
 
-import net.krona.politicsmod.block.entity.ResidentialBuildingEntity;
+import net.krona.politicsmod.client.ui.FlatButton;
+import net.krona.politicsmod.client.ui.PoliticsScreen;
+import net.krona.politicsmod.client.ui.UiKit;
+import net.krona.politicsmod.network.ModNetworking;
 import net.krona.politicsmod.network.UpdateBuildingPayload;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.krona.politicsmod.network.ModNetworking;
 
-public class ResidentialScreen extends Screen {
+/** Size of the zone a Residential Building counts beds in. */
+public class ResidentialScreen extends PoliticsScreen {
+    private static final int PW = 250, PH = 150;
+
     private final BlockPos pos;
     private final int currentPop;
     private EditBox inputX, inputY, inputZ;
+    private int px, py;
 
     public ResidentialScreen(BlockPos pos, int currentPop) {
         super(Component.translatable("gui.politicsmod.residential.title"));
@@ -23,23 +28,23 @@ public class ResidentialScreen extends Screen {
 
     @Override
     protected void init() {
-        int cx = width / 2;
-        int cy = height / 2;
+        px = (width - PW) / 2;
+        py = (height - PH) / 2;
+        int fx = px + PW - 70;
+        inputX = addRenderableWidget(field(fx, py + 42, Component.translatable("gui.politicsmod.residential.radius_x")));
+        inputY = addRenderableWidget(field(fx, py + 62, Component.translatable("gui.politicsmod.residential.height_y")));
+        inputZ = addRenderableWidget(field(fx, py + 82, Component.translatable("gui.politicsmod.residential.radius_z")));
+        Component recalc = Component.translatable("gui.politicsmod.residential.recalc");
+        int bw = Math.max(100, FlatButton.widthFor(recalc));
+        addRenderableWidget(new FlatButton(px + (PW - bw) / 2, py + PH - 25, bw, 16, recalc, FlatButton.Style.PRIMARY, this::sendUpdate));
+    }
 
-        this.inputX = new EditBox(font, cx - 50, cy - 40, 100, 20, Component.translatable("gui.politicsmod.residential.radius_x"));
-        this.inputY = new EditBox(font, cx - 50, cy - 10, 100, 20, Component.translatable("gui.politicsmod.residential.height_y"));
-        this.inputZ = new EditBox(font, cx - 50, cy + 20, 100, 20, Component.translatable("gui.politicsmod.residential.radius_z"));
-
-        this.inputX.setValue("5");
-        this.inputY.setValue("5");
-        this.inputZ.setValue("5");
-
-        this.addRenderableWidget(inputX);
-        this.addRenderableWidget(inputY);
-        this.addRenderableWidget(inputZ);
-
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.politicsmod.residential.recalc"), b -> sendUpdate())
-                .bounds(cx - 60, cy + 50, 120, 20).build());
+    private EditBox field(int x, int y, Component name) {
+        EditBox box = new EditBox(font, x, y, 56, 14, name);
+        box.setMaxLength(2);
+        box.setFilter(v -> v.matches("\\d*"));
+        box.setValue("5");
+        return box;
     }
 
     private void sendUpdate() {
@@ -48,21 +53,23 @@ public class ResidentialScreen extends Screen {
             int y = Integer.parseInt(inputY.getValue());
             int z = Integer.parseInt(inputZ.getValue());
             ModNetworking.toServer(new UpdateBuildingPayload(pos, x, y, z));
-            this.onClose();
-        } catch (NumberFormatException e) {
+            onClose();
+        } catch (NumberFormatException ignored) {
+            // an empty field: leave the screen open
         }
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float pt) {
-        this.renderBackground(g, mx, my, pt);
-        super.render(g, mx, my, pt);
-        g.drawCenteredString(font, Component.translatable("gui.politicsmod.residential.config_title"), width/2, height/2 - 80, 0xFFFFFF);
-        String popText = Component.translatable("gui.politicsmod.residential.pop", currentPop).getString();
-        g.drawCenteredString(font, popText, width/2, height/2 - 65, 0x00FF00);
-
-        g.drawString(font, "X:", width/2 - 65, height/2 - 35, 0xAAAAAA);
-        g.drawString(font, "Y:", width/2 - 65, height/2 - 5, 0xAAAAAA);
-        g.drawString(font, "Z:", width/2 - 65, height/2 + 25, 0xAAAAAA);
+    public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
+        super.renderBackground(g, mx, my, pt);
+        UiKit.panel(g, px, py, PW, PH);
+        g.drawCenteredString(font, Component.translatable("gui.politicsmod.residential.config_title").withStyle(ChatFormatting.BOLD),
+                px + PW / 2, py + 10, UiKit.ACCENT);
+        g.fill(px + 12, py + 22, px + PW - 12, py + 23, UiKit.PANEL_BORDER);
+        UiKit.text(g, font, Component.translatable("gui.politicsmod.residential.pop", currentPop), px + 13, py + 28, PW - 26, UiKit.GOOD);
+        int lw = PW - 70 - 13 - 6;
+        UiKit.text(g, font, Component.translatable("gui.politicsmod.residential.radius_x"), px + 13, py + 45, lw, UiKit.TEXT_DIM);
+        UiKit.text(g, font, Component.translatable("gui.politicsmod.residential.height_y"), px + 13, py + 65, lw, UiKit.TEXT_DIM);
+        UiKit.text(g, font, Component.translatable("gui.politicsmod.residential.radius_z"), px + 13, py + 85, lw, UiKit.TEXT_DIM);
     }
 }

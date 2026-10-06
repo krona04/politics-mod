@@ -21,6 +21,9 @@ public class PoliticsEvents {
 
     public static void onPlayerTick(Player entity) {
         if (entity instanceof ServerPlayer player) {
+            if (player.tickCount % 5 == 0) {
+                net.krona.politicsmod.protection.Protection.checkEntry(player);
+            }
             if (player.tickCount % 20 == 0) {
                 updatePlayerHud(player);
             }
@@ -32,19 +35,24 @@ public class PoliticsEvents {
         if (manager == null) return;
 
         ChunkPos pos = player.chunkPosition();
-        String currentCountry = manager.getCountryNameAt(pos);
-        String currentCity = manager.getCityAt(pos);
+        boolean land = PoliticsManager.hasTerritory(player.level());
+        String currentCountry = land ? manager.getCountryNameAt(pos) : null;
+        String currentCity = land ? manager.getCityAt(pos) : null;
 
-        String ownedCountry = manager.getCountryByOwner(player.getUUID());
-        int balance = 0;
-        if (ownedCountry != null) {
-            balance = manager.getBalance(ownedCountry);
-        }
+        String myCountry = manager.getPlayerCountry(player.getUUID());
+        int treasury = myCountry != null ? manager.getBalance(myCountry) : SyncHudPayload.NO_COUNTRY;
 
+        net.krona.politicsmod.politics.Plot plot = land ? manager.getPlot(pos) : null;
         ModNetworking.toPlayer(player, new SyncHudPayload(
                 currentCountry == null ? "" : currentCountry,
                 currentCity == null ? "" : currentCity,
-                balance
+                treasury,
+                manager.getWallet(player.getUUID()).balance(),
+                plot != null,
+                plot != null && plot.isOwned() ? plot.ownerName : "",
+                plot != null ? plot.salePrice : 0,
+                plot != null ? plot.rentPrice : 0,
+                myCountry == null ? "" : myCountry
         ));
     }
 }

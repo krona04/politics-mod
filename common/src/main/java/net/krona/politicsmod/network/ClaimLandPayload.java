@@ -1,5 +1,6 @@
 package net.krona.politicsmod.network;
 
+import net.krona.politicsmod.politics.RoleAction;
 import net.krona.politicsmod.config.PoliticsConfig;
 
 import net.krona.politicsmod.Politicsmod;
@@ -37,7 +38,8 @@ public record ClaimLandPayload(BlockPos center, String countryName, String cityN
     public static void handle(final ClaimLandPayload payload, final NetworkManager.PacketContext context) {
         context.queue(() -> {
             ServerPlayer player = (ServerPlayer) context.getPlayer();
-            PoliticsManager manager = PoliticsManager.get(player.level());
+            // The map is of the Overworld; claiming from another dimension would pick chunks by the wrong coordinates
+            PoliticsManager manager = PoliticsManager.here(player);
             if (manager == null) return;
 
             String playerCountryName = manager.getPlayerCountry(player.getUUID());
@@ -52,7 +54,7 @@ public record ClaimLandPayload(BlockPos center, String countryName, String cityN
             String currentOwner = manager.getCountryNameAt(chunkPos);
 
             if (payload.isCityClaim()) {
-                if (role != CountryRole.LEADER && role != CountryRole.MAYOR) {
+                if (!RoleAction.CLAIM_CITY.allowed(role)) {
                     player.sendSystemMessage(Component.translatable("message.politicsmod.claim.leader_mayor_only").withStyle(ChatFormatting.RED));
                     return;
                 }
@@ -100,8 +102,6 @@ public record ClaimLandPayload(BlockPos center, String countryName, String cityN
                 player.sendSystemMessage(Component.translatable("message.politicsmod.claim.country_expanded", CLAIM_PRICE).withStyle(ChatFormatting.GREEN));
             }
 
-            int newColor = manager.getColorForChunk(chunkPos);
-            NetworkManager.sendToPlayer(player, new SyncChunkPayload(chunkPos, newColor));
         });
     }
 }

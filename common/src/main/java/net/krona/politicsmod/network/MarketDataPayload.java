@@ -1,5 +1,6 @@
 package net.krona.politicsmod.network;
 
+import net.krona.politicsmod.politics.RoleAction;
 import dev.architectury.networking.NetworkManager;
 import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.Politicsmod;
@@ -7,6 +8,7 @@ import net.krona.politicsmod.client.ClientPoliticsData;
 import net.krona.politicsmod.config.PoliticsConfig;
 import net.krona.politicsmod.market.MarketService;
 import net.krona.politicsmod.politics.Country;
+import net.krona.politicsmod.politics.DiplomacyStatus;
 import net.krona.politicsmod.politics.MarketListing;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -28,16 +30,23 @@ public record MarketDataPayload(
         String myCountry,
         String myRole,
         int treasury,
+        int wallet,
+        int permissions,   // RoleAction mask of the viewer
         int feePercent,
         int maxPrice,
         List<Entry> entries
 ) implements CustomPacketPayload {
 
     /**
-     * @param relation relation of the player's country to the seller (ALLIANCE/NEUTRAL/WAR)
-     * @param fee      fee deducted from the seller if the player's country buys
+     * @param seller     selling country (for personal listings: the seller's country at listing time)
+     * @param sellerName player who listed it
+     * @param personal   true = the money goes to that player's wallet, false = to the country's treasury
+     * @param ownedByMe  the viewing player can withdraw it (own personal listing or own country's listing)
+     * @param relation   relation of the viewer's country to the seller (ALLIANCE/NEUTRAL/WAR)
+     * @param fee        fee deducted from the seller if the viewer buys
      */
-    public record Entry(long id, String seller, ItemStack stack, int price, String relation, int fee) {
+    public record Entry(long id, String seller, String sellerName, boolean personal, boolean ownedByMe,
+                        ItemStack stack, int price, String relation, int fee) {
     }
 
     public static final Type<MarketDataPayload> TYPE =
@@ -66,10 +75,12 @@ public record MarketDataPayload(
             List<MarketListing> listings = new ArrayList<>(mgr.getListings());
             listings.sort(Comparator.comparingLong((MarketListing l) -> l.createdAt).reversed());
             for (MarketListing l : listings) {
-                if (mgr.getCountry(l.seller) == null) continue; // seller country was dissolved
-                entries.add(new Entry(l.id, l.seller, l.stack, l.price,
-                        mgr.getDiplomacy(mine, l.seller).name(),
-                        MarketService.feeFor(mgr, mine, l.seller, l.price)));
+                boolean sellerExists = mgr.getCountry(l.seller) != null;
+                if (!l.personal && !sellerExists) continue; // state listing of a dissolved country
+                boolean ownedByMe = l.personal ? l.listedBy.equals(player.getUUID()) : l.seller.equals(mine);
+                String relation = sellerExists ? mgr.getDiplomacy(mine, l.seller).name() : DiplomacyStatus.NEUTRAL.name();
+                entries.add(new Entry(l.id, l.seller, l.sellerName, l.personal, ownedByMe, l.stack, l.price,
+                        relation, MarketService.feeFor(mgr, mine, l.seller, l.price)));
             }
         }
 
@@ -78,6 +89,8 @@ public record MarketDataPayload(
                 mine != null ? mine : "",
                 country != null ? country.getRole(player.getUUID()).name() : "GUEST",
                 country != null ? country.balance : 0,
+                mgr != null ? mgr.getWallet(player.getUUID()).balance() : 0,
+                country != null ? RoleAction.mask(country.getRole(player.getUUID())) : 0,
                 cfg.marketFeePercent,
                 cfg.maxListingPrice,
                 entries);
@@ -88,12 +101,17 @@ public record MarketDataPayload(
         buf.writeUtf(p.myCountry);
         buf.writeUtf(p.myRole);
         buf.writeInt(p.treasury);
+        buf.writeInt(p.wallet);
+        buf.writeVarInt(p.permissions);
         buf.writeVarInt(p.feePercent);
         buf.writeVarInt(p.maxPrice);
         buf.writeVarInt(p.entries.size());
         for (Entry e : p.entries) {
             buf.writeVarLong(e.id);
             buf.writeUtf(e.seller);
+            buf.writeUtf(e.sellerName);
+            buf.writeBoolean(e.personal);
+            buf.writeBoolean(e.ownedByMe);
             ItemStack.STREAM_CODEC.encode(buf, e.stack);
             buf.writeVarInt(e.price);
             buf.writeUtf(e.relation);
@@ -106,14 +124,16 @@ public record MarketDataPayload(
         String myCountry = buf.readUtf();
         String myRole = buf.readUtf();
         int treasury = buf.readInt();
+        int wallet = buf.readInt();
+        int permissions = buf.readVarInt();
         int feePercent = buf.readVarInt();
         int maxPrice = buf.readVarInt();
         int count = buf.readVarInt();
         List<Entry> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            entries.add(new Entry(buf.readVarLong(), buf.readUtf(), ItemStack.STREAM_CODEC.decode(buf),
-                    buf.readVarInt(), buf.readUtf(), buf.readVarInt()));
+            entries.add(new Entry(buf.readVarLong(), buf.readUtf(), buf.readUtf(), buf.readBoolean(), buf.readBoolean(),
+                    ItemStack.STREAM_CODEC.decode(buf), buf.readVarInt(), buf.readUtf(), buf.readVarInt()));
         }
-        return new MarketDataPayload(open, myCountry, myRole, treasury, feePercent, maxPrice, entries);
+        return new MarketDataPayload(open, myCountry, myRole, treasury, wallet, permissions, feePercent, maxPrice, entries);
     }
 }

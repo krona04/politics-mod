@@ -25,7 +25,7 @@ public class TaxBlock extends Block {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         if (!level.isClientSide() && placer instanceof Player player) {
-            PoliticsManager manager = PoliticsManager.get(level);
+            PoliticsManager manager = PoliticsManager.at(level);
             if (manager != null) {
                 ChunkPos currentChunk = new ChunkPos(pos);
                 String countryName = manager.getCountryNameAt(currentChunk);
@@ -66,7 +66,7 @@ public class TaxBlock extends Block {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            PoliticsManager manager = PoliticsManager.get(level);
+            PoliticsManager manager = PoliticsManager.at(level);
             if (manager != null) {
                 String countryName = manager.getCountryNameAt(new ChunkPos(pos));
                 if (countryName != null) {

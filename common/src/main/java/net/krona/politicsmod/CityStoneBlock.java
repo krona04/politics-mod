@@ -15,11 +15,6 @@ public class CityStoneBlock extends Block {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!player.isCreative()) {
-            player.displayClientMessage(Component.translatable("message.politicsmod.only_creative").withStyle(ChatFormatting.RED), true);
-            return InteractionResult.FAIL;
-        }
-
         if (level.isClientSide) {
             net.krona.politicsmod.client.ClientScreens.openCityFoundation(pos);
         }

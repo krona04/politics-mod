@@ -11,7 +11,7 @@ authors = "Krona04"
 description = '''
 Political systems, economy, diplomacy and city building for Minecraft.
 '''
-#logoFile = "title.png"
+logoFile = "title.png"
 
 [[dependencies.politicsmod]]
 modId = "neoforge"
@@ -43,3 +43,6 @@ side = "BOTH"
 
 [[mixins]]
 config = "politicsmod.mixins.json"
+
+[[mixins]]
+config = "politicsmod-neoforge.mixins.json"

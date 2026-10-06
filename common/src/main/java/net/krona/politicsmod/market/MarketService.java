@@ -1,8 +1,10 @@
 package net.krona.politicsmod.market;
 
+import net.krona.politicsmod.politics.RoleAction;
 import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.TradeWarehouseBlock;
 import net.krona.politicsmod.config.PoliticsConfig;
+import net.krona.politicsmod.economy.WalletService;
 import net.krona.politicsmod.network.MarketDataPayload;
 import net.krona.politicsmod.network.ModNetworking;
 import net.krona.politicsmod.politics.Country;
@@ -59,7 +61,7 @@ public final class MarketService {
         ModNetworking.toPlayer(player, MarketDataPayload.build(player, true));
     }
 
-    public static void handleAction(ServerPlayer player, int action, long listingId, int price) {
+    public static void handleAction(ServerPlayer player, int action, long listingId, int price, boolean stateMode) {
         PoliticsManager mgr = PoliticsManager.get(player.level());
         if (mgr == null || !hasValidSession(player)) return;
 
@@ -70,8 +72,8 @@ public final class MarketService {
         }
 
         switch (action) {
-            case ACTION_LIST -> list(player, mgr, mine, price);
-            case ACTION_BUY -> buy(player, mgr, mine, listingId);
+            case ACTION_LIST -> list(player, mgr, mine, price, stateMode);
+            case ACTION_BUY -> buy(player, mgr, mine, listingId, stateMode);
             case ACTION_CANCEL -> cancel(player, mgr, mine, listingId);
             default -> {
                 return;
@@ -95,14 +97,23 @@ public final class MarketService {
 
     // ── Actions ──────────────────────────────────────────────────────────
 
-    private static void list(ServerPlayer player, PoliticsManager mgr, String mine, int price) {
+    /** Lists the held item. stateMode = the proceeds go to the country's treasury instead of the player's wallet. */
+    private static void list(ServerPlayer player, PoliticsManager mgr, String mine, int price, boolean stateMode) {
         PoliticsConfig cfg = PoliticsConfig.get();
         if (price < 1 || price > cfg.maxListingPrice) {
             fail(player, Component.translatable("message.politicsmod.market.invalid_price", cfg.maxListingPrice));
             return;
         }
-        if (mgr.countListings(mine) >= cfg.maxListingsPerCountry) {
+        if (stateMode && !RoleAction.SELL_FOR_STATE.allowed(mgr.getCountry(mine), player.getUUID())) {
+            fail(player, Component.translatable("message.politicsmod.market.sell_state_role"));
+            return;
+        }
+        if (stateMode && mgr.countListings(mine) >= cfg.maxListingsPerCountry) {
             fail(player, Component.translatable("message.politicsmod.market.listing_limit", cfg.maxListingsPerCountry));
+            return;
+        }
+        if (!stateMode && mgr.countPersonalListings(player.getUUID()) >= cfg.maxListingsPerPlayer) {
+            fail(player, Component.translatable("message.politicsmod.market.personal_limit", cfg.maxListingsPerPlayer));
             return;
         }
         ItemStack held = player.getMainHandItem();
@@ -114,18 +125,20 @@ public final class MarketService {
         // Take the item first, then create the listing, so it can't be duplicated
         ItemStack stack = held.copy();
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        mgr.addListing(mine, player.getUUID(), stack, price);
+        mgr.addListing(mine, player.getUUID(), player.getGameProfile().getName(), !stateMode, stack, price);
 
-        player.sendSystemMessage(Component.translatable("message.politicsmod.market.listed",
+        player.sendSystemMessage(Component.translatable(stateMode ? "message.politicsmod.market.listed" : "message.politicsmod.market.listed_personal",
                 stack.getHoverName(), stack.getCount(), price).withStyle(ChatFormatting.GREEN));
     }
 
-    private static void buy(ServerPlayer player, PoliticsManager mgr, String mine, long listingId) {
-        Country buyer = mgr.getCountry(mine);
-        CountryRole role = buyer.getRole(player.getUUID());
-        if (role != CountryRole.LEADER && role != CountryRole.MAYOR) {
-            fail(player, Component.translatable("message.politicsmod.market.buy_role"));
-            return;
+    /** Buys a listing. fromTreasury = pay from the country's treasury (leader or mayor only), otherwise from the wallet. */
+    private static void buy(ServerPlayer player, PoliticsManager mgr, String mine, long listingId, boolean fromTreasury) {
+        Country buyerCountry = mgr.getCountry(mine);
+        if (fromTreasury) {
+            if (!RoleAction.SPEND_TREASURY.allowed(buyerCountry, player.getUUID())) {
+                fail(player, Component.translatable("message.politicsmod.market.buy_role"));
+                return;
+            }
         }
 
         MarketListing listing = mgr.findListing(listingId);
@@ -133,52 +146,76 @@ public final class MarketService {
             fail(player, Component.translatable("message.politicsmod.market.not_found"));
             return;
         }
-        if (listing.seller.equals(mine)) {
+        boolean own = listing.personal ? listing.listedBy.equals(player.getUUID()) : listing.seller.equals(mine);
+        if (own) {
             fail(player, Component.translatable("message.politicsmod.market.own_listing"));
             return;
         }
-        Country seller = mgr.getCountry(listing.seller);
-        if (seller == null) {
+        Country sellerCountry = mgr.getCountry(listing.seller);
+        if (!listing.personal && sellerCountry == null) {
             mgr.removeListing(listing.id);
             fail(player, Component.translatable("message.politicsmod.market.not_found"));
             return;
         }
-        if (mgr.isAtWar(mine, listing.seller)) {
+        if (sellerCountry != null && mgr.isAtWar(mine, listing.seller)) {
             fail(player, Component.translatable("message.politicsmod.market.embargo", listing.seller));
             return;
         }
-        if (buyer.balance < listing.price) {
-            fail(player, Component.translatable("message.politicsmod.market.no_funds", listing.price));
+        int available = fromTreasury ? buyerCountry.balance : mgr.getWallet(player.getUUID()).balance();
+        if (available < listing.price) {
+            fail(player, Component.translatable(fromTreasury ? "message.politicsmod.market.no_funds" : "message.politicsmod.wallet.no_funds",
+                    listing.price));
             return;
         }
 
         int fee = feeFor(mgr, mine, listing.seller, listing.price);
+        int proceeds = listing.price - fee;
 
         // Order matters: remove listing -> money -> item, all within one server tick
         mgr.removeListing(listing.id);
-        buyer.balance -= listing.price;
-        seller.balance += listing.price - fee;
+        if (fromTreasury) {
+            buyerCountry.balance -= listing.price;
+        } else {
+            WalletService.pay(mgr, player.getUUID(), listing.price, listing.personal ? listing.sellerName : listing.seller);
+        }
+        if (listing.personal) {
+            WalletService.creditSale(mgr, listing.listedBy, proceeds, player.getGameProfile().getName());
+        } else {
+            sellerCountry.balance += proceeds;
+        }
         mgr.setDirty();
         give(player, listing.stack.copy());
 
+        String sellerLabel = listing.personal ? listing.sellerName : listing.seller;
         player.sendSystemMessage(Component.translatable("message.politicsmod.market.bought",
-                listing.stack.getHoverName(), listing.stack.getCount(), listing.seller, listing.price)
+                listing.stack.getHoverName(), listing.stack.getCount(), sellerLabel, listing.price)
                 .withStyle(ChatFormatting.GREEN));
-        notifyCountry(player.getServer(), mgr, listing.seller,
-                Component.translatable("message.politicsmod.market.sold_notify",
-                        mine, listing.stack.getHoverName(), listing.stack.getCount(), listing.price - fee)
-                        .withStyle(ChatFormatting.GOLD));
+
+        Component soldNote = Component.translatable("message.politicsmod.market.sold_notify",
+                player.getGameProfile().getName(), listing.stack.getHoverName(), listing.stack.getCount(), proceeds)
+                .withStyle(ChatFormatting.GOLD);
+        if (listing.personal) {
+            ServerPlayer seller = player.getServer().getPlayerList().getPlayer(listing.listedBy);
+            if (seller != null) seller.sendSystemMessage(soldNote);
+        } else {
+            notifyCountry(player.getServer(), mgr, listing.seller, soldNote);
+        }
     }
 
     private static void cancel(ServerPlayer player, PoliticsManager mgr, String mine, long listingId) {
         MarketListing listing = mgr.findListing(listingId);
-        if (listing == null || !listing.seller.equals(mine)) {
+        if (listing == null) {
             fail(player, Component.translatable("message.politicsmod.market.not_found"));
             return;
         }
-        CountryRole role = mgr.getCountry(mine).getRole(player.getUUID());
-        boolean allowed = listing.listedBy.equals(player.getUUID())
-                || role == CountryRole.LEADER || role == CountryRole.MAYOR;
+        boolean allowed;
+        if (listing.personal) {
+            // A personal listing is the player's property: only they can withdraw it
+            allowed = listing.listedBy.equals(player.getUUID());
+        } else {
+            allowed = listing.seller.equals(mine) && (listing.listedBy.equals(player.getUUID())
+                    || RoleAction.SPEND_TREASURY.allowed(mgr.getCountry(mine), player.getUUID()));
+        }
         if (!allowed) {
             fail(player, Component.translatable("message.politicsmod.market.cancel_role"));
             return;
@@ -191,9 +228,14 @@ public final class MarketService {
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    /** Fee taken from the seller; allies trade without it. */
+    /** Fee taken from the seller; trade inside a country and between allies is free. */
     public static int feeFor(PoliticsManager mgr, String buyer, String seller, int price) {
-        if (mgr.isAllied(buyer, seller)) return 0;
+        if (buyer.equals(seller) || mgr.isAllied(buyer, seller)) return 0;
+        // Two free-trade countries trade without a fee
+        var b = mgr.getCountry(buyer);
+        var s = mgr.getCountry(seller);
+        if (b != null && s != null && b.hasLaw(net.krona.politicsmod.politics.Law.FREE_TRADE)
+                && s.hasLaw(net.krona.politicsmod.politics.Law.FREE_TRADE)) return 0;
         return price * PoliticsConfig.get().marketFeePercent / 100;
     }
 

@@ -15,7 +15,7 @@ public final class RenderHooksImpl {
     }
 
     private static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             BorderRenderer.render(event.getPoseStack(), event.getCamera());
         }
     }

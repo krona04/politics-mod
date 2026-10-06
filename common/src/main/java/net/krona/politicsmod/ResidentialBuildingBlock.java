@@ -23,11 +23,6 @@ public class ResidentialBuildingBlock extends Block implements EntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!player.isCreative()) {
-            player.displayClientMessage(Component.translatable("message.politicsmod.only_creative").withStyle(ChatFormatting.RED), true);
-            return InteractionResult.FAIL;
-        }
-
         if (level.isClientSide) {
             int pop = 0;
             if (level.getBlockEntity(pos) instanceof ResidentialBuildingEntity be) {

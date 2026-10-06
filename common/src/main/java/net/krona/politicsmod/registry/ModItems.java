@@ -36,6 +36,12 @@ public final class ModItems {
     public static final RegistrySupplier<Item> VAULT_BLOCK = ITEMS.register("vault_block",
             () -> new BlockItem(ModBlocks.VAULT_BLOCK.get(), new Item.Properties()));
 
+    public static final RegistrySupplier<Item> FLAGPOLE = ITEMS.register("flagpole",
+            () -> new BlockItem(ModBlocks.FLAGPOLE.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> GUIDE_BOOK = ITEMS.register("guide_book",
+            () -> new net.krona.politicsmod.item.GuideBookItem(new Item.Properties().stacksTo(1)));
+
     private ModItems() {
     }
 

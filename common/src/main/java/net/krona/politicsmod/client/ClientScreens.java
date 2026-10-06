@@ -3,7 +3,11 @@ package net.krona.politicsmod.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 
+import java.util.ArrayList;
 import java.util.List;
+import net.krona.politicsmod.item.GuideBookItem;
+import net.minecraft.client.gui.screens.inventory.BookViewScreen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Opens mod screens on behalf of blocks and packets.
@@ -28,6 +32,14 @@ public final class ClientScreens {
 
     public static void openResidential(BlockPos pos, int population) {
         Minecraft.getInstance().setScreen(new ResidentialScreen(pos, population));
+    }
+
+    public static void openGuide() {
+        List<Component> pages = new ArrayList<>();
+        for (int i = 1; i <= GuideBookItem.PAGES; i++) {
+            pages.add(Component.translatable("guide.politicsmod.page." + i));
+        }
+        Minecraft.getInstance().setScreen(new BookViewScreen(new BookViewScreen.BookAccess(pages)));
     }
 
     public static void openMarket() {

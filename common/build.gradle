@@ -2,6 +2,34 @@ architectury {
     common rootProject.enabled_platforms.split(',')
 }
 
+repositories {
+    // Optional web and minimap integrations; used only when those mods are installed
+    maven {
+        name = 'BlueMap'
+        url = 'https://repo.bluecolored.de/releases'
+        content { includeGroup 'de.bluecolored.bluemap' }
+    }
+    maven {
+        name = 'Dynmap'
+        url = 'https://repo.mikeprimm.com/'
+        content { includeGroup 'us.dynmap' }
+    }
+    exclusiveContent {
+        forRepository { maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+configurations {
+    // The JourneyMap API is only published inside the JourneyMap jar, so it is extracted from there.
+    // The NeoForge build is used because it already has Mojang names, like the common module.
+    journeymapMod {
+        canBeResolved = true
+        canBeConsumed = false
+        transitive = false
+    }
+}
+
 dependencies {
     // We depend on Fabric Loader here to use the Fabric @Environment annotations,
     // which get remapped to the correct annotations on each platform.
@@ -13,4 +41,13 @@ dependencies {
     // GeckoLib is compile-only for common code (FoundingStone rendering);
     // the platform modules provide it at runtime
     modCompileOnly "software.bernie.geckolib:geckolib-fabric-$rootProject.minecraft_version:$rootProject.geckolib_version"
+
+    compileOnly "de.bluecolored.bluemap:BlueMapAPI:$rootProject.bluemap_api_version"
+    compileOnly "us.dynmap:DynmapCoreAPI:$rootProject.dynmap_api_version"
+    journeymapMod "maven.modrinth:journeymap:$rootProject.journeymap_version"
+    compileOnly files({
+        zipTree(configurations.journeymapMod.singleFile)
+                .matching { include 'META-INF/jarjar/journeymap-api-*.jar' }
+                .singleFile
+    })
 }

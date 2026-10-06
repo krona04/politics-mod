@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "net.krona.politicsmod.neoforge.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "mixins": [
+    "FireBlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

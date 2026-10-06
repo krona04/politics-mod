@@ -6,6 +6,7 @@ import net.krona.politicsmod.Politicsmod;
 import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.politics.Country;
 import net.krona.politicsmod.politics.CountryRole;
+import net.krona.politicsmod.protection.Protection;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -30,60 +31,28 @@ public class ServerGameEvents {
 
     private static int economyTimer = 0;
     private static int radarTimer    = 0;
+    private static int secondTimer   = 0;
 
-    // 1. Block break protection
+    // 1. Block break protection (plots, roles, sieges)
     public static EventResult onBlockBreak(Level level, BlockPos pos, Player player) {
-        if (level.isClientSide() || player.isCreative()) return EventResult.pass();
-        if (!(level instanceof ServerLevel serverLevel)) return EventResult.pass();
-
-        PoliticsManager manager = PoliticsManager.get(serverLevel);
+        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return EventResult.pass();
+        PoliticsManager manager = PoliticsManager.at(serverLevel);
         if (manager == null) return EventResult.pass();
-
-        ChunkPos chunkPos = new ChunkPos(pos);
-        Country country = manager.getCountryAt(chunkPos);
-        if (country == null) return EventResult.pass();
-
-        CountryRole role = country.getRole(player.getUUID());
-        if (role.canBuild()) return EventResult.pass();
-
-        // War exception: enemies may break blocks in border chunks
-        String attackerCountry = manager.getPlayerCountry(player.getUUID());
-        String territoryCountry = manager.getCountryNameAt(chunkPos);
-        if (attackerCountry != null
-                && manager.isAtWar(attackerCountry, territoryCountry)
-                && manager.isBorderChunk(chunkPos, territoryCountry)) {
-            return EventResult.pass();
-        }
-
-        player.displayClientMessage(
-                Component.translatable("message.politicsmod.no_build_permission", country.getName())
-                        .withStyle(ChatFormatting.RED), true
-        );
-        return EventResult.interruptFalse();
+        return deny(player, Protection.buildDenied(manager, player, pos, true));
     }
 
     // 2. Interaction protection (chests, doors, etc.)
     public static EventResult onBlockInteract(Player player, BlockPos pos) {
         Level level = player.level();
-        if (level.isClientSide() || player.isCreative()) return EventResult.pass();
-        if (!(level instanceof ServerLevel serverLevel)) return EventResult.pass();
-
-        PoliticsManager manager = PoliticsManager.get(serverLevel);
+        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return EventResult.pass();
+        PoliticsManager manager = PoliticsManager.at(serverLevel);
         if (manager == null) return EventResult.pass();
+        return deny(player, Protection.interactDenied(manager, player, pos));
+    }
 
-        ChunkPos chunkPos = new ChunkPos(pos);
-        Country country = manager.getCountryAt(chunkPos);
-        if (country == null) return EventResult.pass();
-
-        CountryRole role = country.getRole(player.getUUID());
-        if (role.canBuild()) return EventResult.pass();
-
-        // Enemies cannot open containers even in border chunks
-        // (looting is only possible by breaking blocks)
-        player.displayClientMessage(
-                Component.translatable("message.politicsmod.no_interact_permission")
-                        .withStyle(ChatFormatting.RED), true
-        );
+    private static EventResult deny(Player player, Component reason) {
+        if (reason == null) return EventResult.pass();
+        player.displayClientMessage(reason.copy().withStyle(ChatFormatting.RED), true);
         return EventResult.interruptFalse();
     }
 
@@ -114,6 +83,16 @@ public class ServerGameEvents {
     public static void onServerTick(MinecraftServer server) {
         economyTimer++;
         radarTimer++;
+
+        net.krona.politicsmod.war.SiegeService.tick(server);
+        if (++secondTimer >= 20) {
+            secondTimer = 0;
+            PoliticsManager mgr = PoliticsManager.get(server.overworld());
+            if (mgr != null) {
+                net.krona.politicsmod.politics.ElectionService.tick(mgr);
+                net.krona.politicsmod.integration.webmap.WebMaps.tick(mgr);
+            }
+        }
 
         if (radarTimer >= PoliticsConfig.get().radarCheckTicks) {
             radarTimer = 0;
@@ -153,7 +132,7 @@ public class ServerGameEvents {
             List<ServerPlayer> enemies = new ArrayList<>();
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                 String pCountry = manager.getPlayerCountry(p.getUUID());
-                if (pCountry != null && manager.isAtWar(countryName, pCountry)) {
+                if (pCountry != null && manager.isAtWar(countryName, pCountry) && PoliticsManager.hasTerritory(p.level())) {
                     enemies.add(p);
                 }
             }

@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "politicsmod:block/flagpole"
+    },
+    "facing=east": {
+      "model": "politicsmod:block/flagpole"
+    },
+    "facing=south": {
+      "model": "politicsmod:block/flagpole"
+    },
+    "facing=west": {
+      "model": "politicsmod:block/flagpole"
+    }
+  }
+}

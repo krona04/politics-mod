@@ -7,6 +7,8 @@ import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
 import dev.architectury.registry.client.rendering.BlockEntityRendererRegistry;
 import net.krona.politicsmod.platform.RenderHooks;
 import net.krona.politicsmod.registry.ModBlockEntities;
+import net.krona.politicsmod.update.UpdateChecker;
+import net.krona.politicsmod.update.UpdateNotifier;
 
 /**
  * Common client entry point. Called from PoliticsmodFabricClient
@@ -30,6 +32,8 @@ public final class PoliticsmodClient {
     }
 
     public static void init() {
+        UpdateChecker.start();
+        UpdateNotifier.init();
         KeyMappingRegistry.register(ModKeyMappings.OPEN_COUNTRY_MENU);
 
         ClientGuiEvent.RENDER_HUD.register(HUD::render);
@@ -42,6 +46,8 @@ public final class PoliticsmodClient {
         // On NeoForge the block entity type is registered later, so wait for it via listen()
         ModBlockEntities.FOUNDING_STONE_BE.listen(type ->
                 BlockEntityRendererRegistry.register(type, context -> new FoundingStoneRenderer()));
+        ModBlockEntities.FLAGPOLE_BE.listen(type ->
+                BlockEntityRendererRegistry.register(type, FlagpoleRenderer::new));
 
         RenderHooks.registerWorldRenderer();
     }

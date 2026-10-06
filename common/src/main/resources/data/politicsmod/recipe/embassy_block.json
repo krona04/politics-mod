@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NGN",
+    "GWG",
+    "QQQ"
+  ],
+  "key": {
+    "N": {
+      "tag": "minecraft:banners"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "W": {
+      "item": "minecraft:writable_book"
+    },
+    "Q": {
+      "item": "minecraft:quartz_block"
+    }
+  },
+  "result": {
+    "id": "politicsmod:embassy_block",
+    "count": 1
+  }
+}

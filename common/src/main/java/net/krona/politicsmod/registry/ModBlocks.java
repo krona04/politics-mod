@@ -31,15 +31,15 @@ public final class ModBlocks {
 
     public static final RegistrySupplier<Block> FOUNDING_STONE = BLOCKS.register("founding_stone",
             () -> new FoundingStoneBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.STONE).strength(3.0f).noOcclusion()));
+                    .mapColor(MapColor.STONE).strength(3.0f).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final RegistrySupplier<Block> CITY_STONE = BLOCKS.register("city_stone",
             () -> new CityStoneBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.STONE).strength(3.0f).noOcclusion()));
+                    .mapColor(MapColor.STONE).strength(3.0f).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final RegistrySupplier<Block> RESIDENTIAL_BUILDING = BLOCKS.register("residential_building",
             () -> new ResidentialBuildingBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.WOOD).strength(2.0f).noOcclusion()));
+                    .mapColor(MapColor.WOOD).strength(2.0f).sound(SoundType.WOOD).noOcclusion()));
 
     public static final RegistrySupplier<Block> TRADE_WAREHOUSE = BLOCKS.register("trade_warehouse",
             () -> new TradeWarehouseBlock(BlockBehaviour.Properties.of()
@@ -51,15 +51,19 @@ public final class ModBlocks {
 
     public static final RegistrySupplier<Block> EMBASSY_BLOCK = BLOCKS.register("embassy_block",
             () -> new EmbassyBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.GOLD).strength(3.5f).noOcclusion()));
+                    .mapColor(MapColor.GOLD).strength(3.5f).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final RegistrySupplier<Block> RADAR_BLOCK = BLOCKS.register("radar_block",
             () -> new RadarBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_RED).strength(3.5f).noOcclusion()));
+                    .mapColor(MapColor.COLOR_RED).strength(3.5f).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final RegistrySupplier<Block> VAULT_BLOCK = BLOCKS.register("vault_block",
             () -> new VaultBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY).strength(5.0f).noOcclusion().requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> FLAGPOLE = BLOCKS.register("flagpole",
+            () -> new net.krona.politicsmod.block.FlagpoleBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD).strength(1.5f).sound(SoundType.WOOD).noOcclusion()));
 
     private ModBlocks() {
     }

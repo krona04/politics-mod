@@ -5,12 +5,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ClientPoliticsData {
+    /** Owner of a claimed chunk as the server last reported it. */
+    public record ChunkInfo(String country, String city) {
+    }
+
     private static final Map<ChunkPos, Integer> CHUNK_COLORS = new HashMap<>();
+    private static final Map<ChunkPos, ChunkInfo> CHUNK_INFO = new HashMap<>();
+    private static final Map<String, String> FLAGS = new HashMap<>();
+    /** Bumped on every territory change; minimap overlays redraw when it moves. */
+    private static int territoryVersion = 0;
     private static boolean renderBorders = true;
 
     public static String currentCountry = "";
+    /** The player's own country, "" if none. */
+    public static String myCountry = "";
     public static String currentCity = "";
-    public static int myBalance = 0;
+    public static int myTreasury = net.krona.politicsmod.network.SyncHudPayload.NO_COUNTRY;
+    public static int myWallet = 0;
+    public static boolean plotHere = false;
+    public static String plotOwner = "";
+    public static int plotSale = 0;
+    public static int plotRent = 0;
     public static int borderStyle = 0;
 
     /** Latest data for the dashboard tabs; null until the server sends it. */
@@ -44,21 +59,51 @@ public class ClientPoliticsData {
         borderStyle = style % 3; // wraps around: 0, 1, 2
     }
 
-    public static void handleChunkSync(ChunkPos pos, int color) {
-        if (color == 0) {
+    public static void handleChunkSync(ChunkPos pos, int color, String country, String city) {
+        if (country.isEmpty()) {
             CHUNK_COLORS.remove(pos);
+            CHUNK_INFO.remove(pos);
         } else {
             CHUNK_COLORS.put(pos, color);
+            CHUNK_INFO.put(pos, new ChunkInfo(country, city));
         }
+        territoryVersion++;
     }
 
-    public static void updateHud(String country, String city, int balance) {
-        currentCountry = (country == null || country.isEmpty()) ?
-                net.minecraft.network.chat.Component.translatable("gui.politicsmod.hud.wilderness").getString() :
-                country;
+    public static ChunkInfo getChunkInfo(ChunkPos pos) {
+        return CHUNK_INFO.get(pos);
+    }
 
-        currentCity = (city == null) ? "" : city;
-        myBalance = balance;
+    public static Map<ChunkPos, ChunkInfo> getChunkInfo() {
+        return CHUNK_INFO;
+    }
+
+    public static int getTerritoryVersion() {
+        return territoryVersion;
+    }
+
+    public static void setFlags(Map<String, String> flags) {
+        FLAGS.clear();
+        FLAGS.putAll(flags);
+    }
+
+    /** Flag image URL of a country, or "" when it has none. */
+    public static String getFlagUrl(String country) {
+        return country == null ? "" : FLAGS.getOrDefault(country, "");
+    }
+
+    public static void updateHud(net.krona.politicsmod.network.SyncHudPayload hud) {
+        currentCountry = hud.country().isEmpty()
+                ? net.minecraft.network.chat.Component.translatable("gui.politicsmod.hud.wilderness").getString()
+                : hud.country();
+        currentCity = hud.city();
+        myTreasury = hud.treasury();
+        myWallet = hud.wallet();
+        plotHere = hud.plot();
+        plotOwner = hud.plotOwner();
+        plotSale = hud.plotSale();
+        plotRent = hud.plotRent();
+        myCountry = hud.myCountry();
     }
 
     public static void addChunk(ChunkPos pos, int color) {
@@ -66,22 +111,18 @@ public class ClientPoliticsData {
         renderBorders = true;
     }
 
-    public static void addInitialTerritory(ChunkPos center) {
-        for (int x = -2; x <= 2; x++) {
-            for (int z = -2; z <= 2; z++) {
-                ChunkPos p = new ChunkPos(center.x + x, center.z + z);
-                // A new country starts fully green (0x00AA00)
-                CHUNK_COLORS.put(p, 0x00AA00);
-            }
-        }
-        renderBorders = true;
-    }
-
     public static void clear() {
         CHUNK_COLORS.clear();
+        CHUNK_INFO.clear();
+        FLAGS.clear();
+        territoryVersion++;
         currentCountry = "";
         currentCity = "";
-        myBalance = 0;
+        myCountry = "";
+        myTreasury = net.krona.politicsmod.network.SyncHudPayload.NO_COUNTRY;
+        myWallet = 0;
+        plotHere = false;
+        plotOwner = "";
         radarAlert = "";
         radarAlertExpiry = 0L;
         countryDetails = null;

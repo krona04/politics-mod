@@ -28,6 +28,8 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.RADAR_BLOCK.get());
                         output.accept(ModItems.VAULT_BLOCK.get());
                         output.accept(ModItems.TRADE_WAREHOUSE.get());
+                        output.accept(ModItems.FLAGPOLE.get());
+                        output.accept(ModItems.GUIDE_BOOK.get());
                     })));
 
     private ModCreativeTabs() {

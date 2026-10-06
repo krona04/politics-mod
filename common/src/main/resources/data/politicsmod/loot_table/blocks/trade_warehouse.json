@@ -4,10 +4,15 @@
     {
       "rolls": 1,
       "entries": [
-        { "type": "minecraft:item", "name": "politicsmod:trade_warehouse" }
+        {
+          "type": "minecraft:item",
+          "name": "politicsmod:trade_warehouse"
+        }
       ],
       "conditions": [
-        { "condition": "minecraft:survives_explosion" }
+        {
+          "condition": "minecraft:survives_explosion"
+        }
       ]
     }
   ]

@@ -27,7 +27,8 @@ public record FoundCityPayload(BlockPos pos, String cityName) implements CustomP
         context.queue(() -> {
             PoliticsManager manager = PoliticsManager.get(context.getPlayer().level());
             if (manager != null) {
-                if (context.getPlayer() instanceof ServerPlayer sp) {
+                if (context.getPlayer() instanceof ServerPlayer sp
+                        && BlockReach.isAt(sp, payload.pos, net.krona.politicsmod.registry.ModBlocks.CITY_STONE.get())) {
                     manager.foundNewCity(payload.pos, sp, payload.cityName);
                 }
             }

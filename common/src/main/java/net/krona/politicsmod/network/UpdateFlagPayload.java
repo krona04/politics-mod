@@ -44,7 +44,13 @@ public record UpdateFlagPayload(String countryName, String flagUrl) implements C
                     // Only the leader can set the flag
                     if (country != null && country.getRole(player.getUUID()) == CountryRole.LEADER) {
 
-                        manager.setFlagUrl(payload.countryName(), payload.flagUrl());
+                        String url = payload.flagUrl().trim();
+                        if (!url.isEmpty() && (url.length() > 256 || !(url.startsWith("https://") || url.startsWith("http://")))) {
+                            player.sendSystemMessage(Component.translatable("message.politicsmod.flag.invalid_url").withStyle(ChatFormatting.RED));
+                            return;
+                        }
+                        manager.setFlagUrl(payload.countryName(), url);
+                        SyncFlagsPayload.broadcast(manager);
                         player.sendSystemMessage(Component.translatable("message.politicsmod.flag.updated").withStyle(ChatFormatting.GREEN));
 
                     } else {

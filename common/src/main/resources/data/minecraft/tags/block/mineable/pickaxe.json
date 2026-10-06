@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "politicsmod:founding_stone",
+    "politicsmod:city_stone",
+    "politicsmod:tax_block",
+    "politicsmod:embassy_block",
+    "politicsmod:radar_block",
+    "politicsmod:vault_block"
+  ]
+}

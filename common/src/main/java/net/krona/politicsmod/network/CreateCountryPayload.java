@@ -25,12 +25,9 @@ public record CreateCountryPayload(BlockPos pos, String countryName) implements 
 
     public static void handle(final CreateCountryPayload payload, final NetworkManager.PacketContext context) {
         context.queue(() -> {
-            PoliticsManager.createCountry(
-                    context.getPlayer().level(),
-                    payload.pos,
-                    context.getPlayer(),
-                    payload.countryName
-            );
+            var player = context.getPlayer();
+            if (!BlockReach.isAt(player, payload.pos, net.krona.politicsmod.registry.ModBlocks.FOUNDING_STONE.get())) return;
+            PoliticsManager.createCountry(player.level(), payload.pos, player, payload.countryName);
         });
     }
 }

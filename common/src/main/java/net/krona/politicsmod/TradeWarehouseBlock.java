@@ -27,7 +27,7 @@ public class TradeWarehouseBlock extends Block {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (level.isClientSide() || !(placer instanceof Player player)) return;
 
-        PoliticsManager manager = PoliticsManager.get(level);
+        PoliticsManager manager = PoliticsManager.at(level);
         if (manager == null) return;
 
         String owner = manager.getCountryNameAt(new ChunkPos(pos));

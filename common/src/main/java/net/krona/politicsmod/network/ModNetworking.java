@@ -38,12 +38,11 @@ public final class ModNetworking {
         s2c(CountryDetailsPayload.TYPE, CountryDetailsPayload.CODEC, CountryDetailsPayload::handle);
         s2c(MarketDataPayload.TYPE, MarketDataPayload.CODEC, MarketDataPayload::handle);
         s2c(BorderSettingsPayload.TYPE, BorderSettingsPayload.CODEC, BorderSettingsPayload::handle);
+        s2c(SyncFlagsPayload.TYPE, SyncFlagsPayload.CODEC, SyncFlagsPayload::handle);
 
         // ---- Client -> Server ----
         NetworkManager.registerReceiver(NetworkManager.Side.C2S,
                 CreateCountryPayload.TYPE, CreateCountryPayload.CODEC, CreateCountryPayload::handle);
-        NetworkManager.registerReceiver(NetworkManager.Side.C2S,
-                CreateCityPayload.TYPE, CreateCityPayload.CODEC, CreateCityPayload::handle);
         NetworkManager.registerReceiver(NetworkManager.Side.C2S,
                 ClaimLandPayload.TYPE, ClaimLandPayload.CODEC, ClaimLandPayload::handle);
         NetworkManager.registerReceiver(NetworkManager.Side.C2S,

@@ -13,7 +13,7 @@
     "issues": "https://github.com/dumitru04/PoliticsMod/issues"
   },
   "license": "GPL-3.0-only",
-  "icon": "assets/politicsmod/icon.png",
+  "icon": "logo.png",
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -21,10 +21,14 @@
     ],
     "client": [
       "net.krona.politicsmod.fabric.client.PoliticsmodFabricClient"
+    ],
+    "journeymap": [
+      "net.krona.politicsmod.integration.journeymap.PoliticsJourneyMapPlugin"
     ]
   },
   "mixins": [
-    "politicsmod.mixins.json"
+    "politicsmod.mixins.json",
+    "politicsmod-fabric.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.19.5",
@@ -33,5 +37,10 @@
     "architectury": ">=13.0.11",
     "fabric-api": "*",
     "geckolib": "*"
+  },
+  "suggests": {
+    "bluemap": "*",
+    "dynmap": "*",
+    "journeymap": "*"
   }
 }

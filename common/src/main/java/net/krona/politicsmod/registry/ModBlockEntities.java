@@ -30,6 +30,10 @@ public final class ModBlockEntities {
             BLOCK_ENTITIES.register("vault_block", () -> BlockEntityType.Builder
                     .of(VaultEntity::new, ModBlocks.VAULT_BLOCK.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<net.krona.politicsmod.block.entity.FlagpoleEntity>> FLAGPOLE_BE =
+            BLOCK_ENTITIES.register("flagpole", () -> BlockEntityType.Builder
+                    .of(net.krona.politicsmod.block.entity.FlagpoleEntity::new, ModBlocks.FLAGPOLE.get()).build(null));
+
     private ModBlockEntities() {
     }
 
