@@ -34,10 +34,32 @@ public final class ClientScreens {
         Minecraft.getInstance().setScreen(new ResidentialScreen(pos, population));
     }
 
+    /** Text area of a vanilla book page: 114 pixels wide, 128 high = 14 lines of 9 pixels. */
+    private static final int BOOK_TEXT_WIDTH = 114, BOOK_LINES = 14;
+
     public static void openGuide() {
+        net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
         List<Component> pages = new ArrayList<>();
         for (int i = 1; i <= GuideBookItem.PAGES; i++) {
-            pages.add(Component.translatable("guide.politicsmod.page." + i));
+            List<net.minecraft.network.chat.FormattedText> lines = font.getSplitter().splitLines(
+                    Component.translatable("guide.politicsmod.page." + i), BOOK_TEXT_WIDTH, net.minecraft.network.chat.Style.EMPTY);
+            // A page too long for one book page (it depends on the language) continues on the next one
+            // instead of being cut off at the bottom
+            int from = 0;
+            while (from < lines.size()) {
+                net.minecraft.network.chat.MutableComponent page = Component.empty();
+                int to = Math.min(lines.size(), from + BOOK_LINES);
+                for (int l = from; l < to; l++) {
+                    if (l > from) page.append("\n");
+                    lines.get(l).visit((style, text) -> {
+                        page.append(Component.literal(text).withStyle(style));
+                        return java.util.Optional.empty();
+                    }, net.minecraft.network.chat.Style.EMPTY);
+                }
+                pages.add(page);
+                from = to;
+                while (from < lines.size() && lines.get(from).getString().isBlank()) from++;
+            }
         }
         Minecraft.getInstance().setScreen(new BookViewScreen(new BookViewScreen.BookAccess(pages)));
     }

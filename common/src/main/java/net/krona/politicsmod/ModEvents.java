@@ -84,9 +84,11 @@ public final class ModEvents {
         TickEvent.PLAYER_POST.register(PoliticsEvents::onPlayerTick);
 
         LifecycleEvent.SERVER_STARTED.register(net.krona.politicsmod.integration.webmap.WebMaps::start);
+        LifecycleEvent.SERVER_STARTED.register(server -> net.krona.politicsmod.integration.settlement.Settlements.announce());
         LifecycleEvent.SERVER_STOPPING.register(server -> {
             net.krona.politicsmod.war.SiegeService.clear();
             net.krona.politicsmod.integration.webmap.WebMaps.stop();
+            net.krona.politicsmod.economy.DailyReport.reset();
         });
     }
 }

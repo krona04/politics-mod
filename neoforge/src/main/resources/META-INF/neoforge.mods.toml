@@ -41,6 +41,21 @@ versionRange = "[4.8,)"
 ordering = "AFTER"
 side = "BOTH"
 
+# Optional settlement mods: colonies and villages inside countries pay tax (any version; checked at runtime)
+[[dependencies.politicsmod]]
+modId = "minecolonies"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.politicsmod]]
+modId = "millenaire"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "BOTH"
+
 [[mixins]]
 config = "politicsmod.mixins.json"
 

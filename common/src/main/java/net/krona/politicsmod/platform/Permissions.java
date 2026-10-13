@@ -22,7 +22,7 @@ public final class Permissions {
     static {
         for (String group : new String[]{"info", "members", "claim", "rename", "pay", "tax", "city", "territory",
                 "embassy", "diplomacy", "wallet", "salary", "plot", "flag", "borders", "delete", "guide", "help",
-                "election", "law", "loan", "siege", "news"}) {
+                "election", "law", "loan", "siege", "news", "settlement"}) {
             NODES.put(group, 0);
         }
         NODES.put("reload", 2);

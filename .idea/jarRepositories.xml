@@ -81,5 +81,15 @@
       <option name="name" value="Modrinth" />
       <option name="url" value="https://api.modrinth.com/maven" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="LDTTeam" />
+      <option name="name" value="LDTTeam" />
+      <option name="url" value="https://ldtteam.jfrog.io/ldtteam/modding/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="CurseMaven" />
+      <option name="name" value="CurseMaven" />
+      <option name="url" value="https://cursemaven.com" />
+    </remote-repository>
   </component>
 </project>

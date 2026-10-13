@@ -41,6 +41,7 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 - **Chunk Claiming** — Select chunks on the Map tab and assign them to your country or a city, or use `/politicsmod claim`.
 - **Borders** — Territory borders are drawn in the world. Toggle them with `/politicsmod borders` and switch style (line on the ground, glowing fence, dashed line) with `/politicsmod borders style`. Borders follow the terrain and are coloured by relation: yours green, allies blue, enemies red.
 - **Territory Trading** — Stand in another nation's chunk and offer a price; their leader accepts or rejects the offer standing on that chunk.
+- **Land Prices** — A chunk costs more the bigger the country is, and three times more if it does not touch your land. The Map tab shows the price of the selection before you buy.
 
 ### 👥 Citizens
 - Invite, kick and promote players from the **Citizens** tab (leaders and mayors).
@@ -61,9 +62,11 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 
 ### 💰 Economy
 - **Treasury** — Every nation has a balance, shown in the HUD and the **Economy** tab.
-- **Tax Blocks** — Place up to 4 per chunk on your territory to earn income every economy cycle.
+- **Economy Cycle** — Every 3 minutes taxes come in and upkeep, salaries and loans go out. At dawn every citizen gets a chat report for the past day.
+- **Starting Treasury** — A new country starts with 2 500$ and 25 chunks.
+- **Tax Blocks** — Place up to 2 per chunk on your territory to earn income every economy cycle.
 - **Federal Tax** — Tax blocks inside cities fill the city treasury; the leader sets the federal tax share that goes to the nation.
-- **Upkeep** — Each claimed chunk costs upkeep every cycle.
+- **Upkeep** — Each claimed chunk costs upkeep every cycle; the capital's core (9 chunks) is free.
 - **Vault** — Each Vault raises the treasury limit. Right-click it to see the current limit.
 - **Residential Buildings** — Simulate population based on housing near the block.
 
@@ -103,6 +106,14 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 - A news feed of everything that happens between nations (`/politicsmod news`, News tab).
 - **Flagpole** block that flies the flag of the land's owner.
 - Country borders on **BlueMap**, **Dynmap** and **JourneyMap** when they are installed.
+
+### 🏘️ MineColonies & Millénaire (NeoForge)
+- **Settlements tab:** your colonies and villages, their people, happiness or reputation, and the tax they pay; also marked on the map.
+- Colonies of your citizens and Millénaire villages they control belong to your country and pay tax — happy colonies pay more.
+- Colony ranks follow diplomacy: citizens and allies are friends of the colony, enemies at war are hostile, and the guards fight them.
+- Become a *friend of the village* in Millénaire and annex it: it pays tribute, but it breaks away if relations sour.
+- Land of other players' colonies and of villages you don't control can't be claimed or founded on; your own settlements' land is free to claim.
+- Both are optional; nothing is needed when they aren't installed.
 
 ### 🛡️ Protection
 - Outsiders cannot break or interact with blocks inside your territory. Only operators bypass protection.
@@ -187,6 +198,7 @@ Most actions are also available in the dashboard (`K`).
 | `/politicsmod loan offer <amount> <interest> <cycles> <country>` | Leader | Offer a loan to an ally |
 | `/politicsmod loan accept\|reject\|list` | Leader / Member | Answer an offer, see your loans |
 | `/politicsmod news [count]` | Anyone | Latest news |
+| `/politicsmod settlement` / `settlement annex\|release <village>` | Member / Leader | Colonies and villages of the country; annex or release a Millénaire village (NeoForge, with MineColonies or Millénaire) |
 
 ### Protection
 
@@ -246,7 +258,7 @@ Flags: `pvp`, `explosions`, `mob_explosions`, `fire_spread`, `item_pickup`, `ent
 ### Permissions
 
 Every command group has a permission node `politicsmod.command.<group>` for LuckPerms and similar mods:
-`info`, `members`, `claim`, `rename`, `pay`, `tax`, `city`, `territory`, `embassy`, `diplomacy`, `wallet`, `salary`, `plot`, `flag`, `borders`, `delete`, `guide`, `help`, `election`, `law`, `siege`, `loan`, `news` (everyone by default), `reload` and `admin` (operators by default).
+`info`, `members`, `claim`, `rename`, `pay`, `tax`, `city`, `territory`, `embassy`, `diplomacy`, `wallet`, `salary`, `plot`, `flag`, `borders`, `delete`, `guide`, `help`, `election`, `law`, `siege`, `loan`, `news`, `settlement` (everyone by default), `reload` and `admin` (operators by default).
 
 ---
 
@@ -256,8 +268,8 @@ Server settings live in `config/politicsmod.json` and are created on first launc
 
 | Group | Settings |
 |---|---|
-| Territory | `countryChunkPrice`, `cityChunkPrice`, `upkeepPerChunk` |
-| Economy | `economyCycleTicks`, `incomePerTaxBlock`, `maxTaxBlocksPerChunk`, `baseMaxBalance`, `vaultBalanceBonus`, `embassyIncomeBonus` |
+| Territory | `startingTreasury`, `countryChunkPrice`, `chunkPriceGrowthPercent`, `chunkPriceGrowthStart`, `maxChunkPrice`, `outpostPriceMultiplier`, `cityChunkPrice`, `upkeepPerChunk`, `upkeepFreeChunks` |
+| Economy | `economyCycleTicks`, `economyDailyReport`, `incomePerTaxBlock`, `maxTaxBlocksPerChunk`, `baseMaxBalance`, `vaultBalanceBonus`, `embassyIncomeBonus` |
 | Diplomacy | `warCost`, `warCooldownMinutes`, `tributeRateDefault`, `secedeThresholdPercent` |
 | Market | `marketFeePercent`, `maxListingsPerCountry`, `maxListingsPerPlayer`, `maxListingPrice` |
 | Wallets | `walletStartBalance`, `walletMaxBalance`, `walletHistorySize`, `maxSalary`, `defaultIncomeTaxPercent`, `maxIncomeTaxPercent` |
@@ -270,6 +282,7 @@ Server settings live in `config/politicsmod.json` and are created on first launc
 | Sieges | `siegeCost`, `siegeHoldSeconds`, `siegeGraceSeconds`, `maxSiegesPerCountry` |
 | Debt | `maxDebt`, `maxLoanInterestPercent`, `maxLoanCycles` |
 | News & maps | `newsMaxEntries`, `webMapsEnabled`, `webMapUpdateSeconds` |
+| Settlements | `minecoloniesEnabled`, `colonyTaxPerCitizen`, `colonyTaxFollowsHappiness`, `colonyRanksFollowDiplomacy`, `millenaireEnabled`, `villageTaxPerVillager`, `villageAnnexReputation`, `villageKeepReputation`, `annexedVillageTributePercent`, `settlementsBlockClaims` |
 | Guide | `giveGuideOnFirstJoin` |
 | Radar | `radarRangeChunks`, `radarCheckTicks` |
 
@@ -295,7 +308,7 @@ Every block can be crafted and drops when broken with the right tool. The **Poli
 
 ## 🌍 Localization
 
-Fully localized in twelve languages — all in-game messages, HUD and GUI labels follow the player's language setting:
+Fully localized in sixteen languages — all in-game messages, HUD and GUI labels follow the player's language setting:
 
 | Language | Code |
 |---|---|
@@ -311,6 +324,10 @@ Fully localized in twelve languages — all in-game messages, HUD and GUI labels
 | Italian | `it_it` |
 | Chinese (Simplified) | `zh_cn` |
 | Japanese | `ja_jp` |
+| Korean | `ko_kr` |
+| Chinese (Traditional) | `zh_tw` |
+| Turkish | `tr_tr` |
+| Dutch | `nl_nl` |
 
 ---
 
@@ -321,6 +338,13 @@ Licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 - **Modpacks:** Free to include in any modpack.
 - **Source Code:** Available on [GitHub](https://github.com/krona04/politics-mod). Free to view, modify, and distribute — any derivative work must also be released under GPL-3.0.
 - **Distribution:** Redistribution permitted provided the source code is made available and the original license file is included.
+
+---
+
+## ❤️ Support & News
+
+PoliticsMod is free. If you enjoy it, you can support development and follow the news on **[Ko-fi](https://ko-fi.com/krona04)**.
+The mod mentions this once in chat when you join a world (the first time, with a short welcome); turn it off with `showSupportMessage` in the config.
 
 ---
 

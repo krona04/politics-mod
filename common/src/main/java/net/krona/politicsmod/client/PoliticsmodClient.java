@@ -34,6 +34,7 @@ public final class PoliticsmodClient {
     public static void init() {
         UpdateChecker.start();
         UpdateNotifier.init();
+        net.krona.politicsmod.update.SupportNotifier.init();
         KeyMappingRegistry.register(ModKeyMappings.OPEN_COUNTRY_MENU);
 
         ClientGuiEvent.RENDER_HUD.register(HUD::render);

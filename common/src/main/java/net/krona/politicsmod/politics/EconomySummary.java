@@ -31,10 +31,11 @@ public record EconomySummary(
         int incomeTaxRate,
         int loanPayment,      // installments this country pays per cycle
         int loanIncome,       // installments other countries pay this one per cycle
-        int debt              // total still owed on loans
+        int debt,             // total still owed on loans
+        int settlementIncome  // nation's share of colony and village tax (MineColonies, Millénaire)
 ) {
     public int income() {
-        return directIncome + federalTaxIncome + embassyIncome;
+        return directIncome + federalTaxIncome + embassyIncome + settlementIncome;
     }
 
     public int net() {
@@ -80,6 +81,14 @@ public record EconomySummary(
             if (l.lender.equals(countryName)) loanIncome += Math.min(l.installment, l.remaining);
         }
 
+        int settlements = 0;
+        for (net.krona.politicsmod.integration.settlement.Settlements.Income in
+                : net.krona.politicsmod.integration.settlement.Settlements.incomeOf(mgr.overworld(), mgr, countryName)) {
+            String city = mgr.getCityAt(in.center());
+            boolean inCity = city != null && country.cities.contains(city);
+            settlements += inCity ? (country.federalTaxRate > 0 ? in.amount() * country.federalTaxRate / 100 : 0) : in.amount();
+        }
+
         int salaryCost = 0;
         int incomeTaxReturn = 0;
         for (int salary : country.salaries.values()) {
@@ -94,7 +103,7 @@ public record EconomySummary(
                 direct,
                 federal,
                 active * PoliticsManager.embassyIncome(country),
-                chunks[0] * cfg.upkeepPerChunk,
+                net.krona.politicsmod.economy.LandPrices.upkeep(chunks[0]),
                 tributeTo,
                 tributeAmount,
                 country.vaultBlocks.size(),
@@ -106,6 +115,7 @@ public record EconomySummary(
                 country.incomeTaxRate,
                 loanPayment,
                 loanIncome,
-                mgr.getDebt(countryName));
+                mgr.getDebt(countryName),
+                settlements);
     }
 }

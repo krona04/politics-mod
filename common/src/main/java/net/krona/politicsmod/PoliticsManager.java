@@ -75,12 +75,25 @@ public class PoliticsManager extends SavedData {
      */
     public static PoliticsManager get(Level level) {
         if (level instanceof ServerLevel sl) {
-            return sl.getServer().overworld().getDataStorage().computeIfAbsent(
+            ServerLevel overworld = sl.getServer().overworld();
+            PoliticsManager m = overworld.getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(PoliticsManager::new, PoliticsManager::load, null),
                 "politicsmod_data");
+            m.overworld = overworld;
+            return m;
         }
         return null;
     }
+
+    /** The world the countries live in; set whenever the manager is looked up. */
+    private transient ServerLevel overworld;
+
+    /** Annexed villages, announced settlements and colony ranks set by PoliticsMod (MineColonies, Millénaire). */
+    private net.krona.politicsmod.integration.settlement.SettlementData settlementData = new net.krona.politicsmod.integration.settlement.SettlementData();
+
+    public net.krona.politicsmod.integration.settlement.SettlementData settlementData() { return settlementData; }
+
+    public ServerLevel overworld() { return overworld; }
 
     /** Countries own land only in the Overworld. */
     public static boolean hasTerritory(Level level) {
@@ -181,6 +194,8 @@ public class PoliticsManager extends SavedData {
         for (Loan l : loans) loanList.add(l.save());
         tag.put("loans", loanList);
 
+        tag.put("settlements", settlementData.save());
+
         return tag;
     }
 
@@ -246,6 +261,7 @@ public class PoliticsManager extends SavedData {
 
         ListTag loanList = tag.getList("loans", Tag.TAG_COMPOUND);
         for (int i = 0; i < loanList.size(); i++) m.loans.add(Loan.load(loanList.getCompound(i)));
+        m.settlementData = net.krona.politicsmod.integration.settlement.SettlementData.load(tag.getCompound("settlements"));
         return m;
     }
 
@@ -649,7 +665,22 @@ public class PoliticsManager extends SavedData {
                 }
             }
         }
-        m.countries.put(name, new Country(name, owner.getUUID()));
+        Country founded = new Country(name, owner.getUUID());
+        // Nobody else's colony or village may end up inside the new country
+        if (level instanceof ServerLevel sl) {
+            Component blocked = null;
+            for (int x = -2; x <= 2 && blocked == null; x++) {
+                for (int z = -2; z <= 2 && blocked == null; z++) {
+                    blocked = net.krona.politicsmod.integration.settlement.Settlements.claimBlocker(sl, m,
+                            java.util.Set.of(owner.getUUID()), null, new ChunkPos(c.x + x, c.z + z));
+                }
+            }
+            if (blocked != null) {
+                owner.sendSystemMessage(blocked.copy().withStyle(net.minecraft.ChatFormatting.RED));
+                return;
+            }
+        }
+        m.countries.put(name, founded);
         m.claimChunk(c, 2, name, null);
         m.postNews("news.politicsmod.country_founded", List.of(name), name, owner.getGameProfile().getName());
         net.krona.politicsmod.network.SyncFlagsPayload.broadcast(m);
@@ -696,6 +727,7 @@ public class PoliticsManager extends SavedData {
     // ── ECONOMY CYCLE ────────────────────────────────────────────────────
 
     public void processEconomyCycle(ServerLevel level) {
+        net.krona.politicsmod.economy.DailyReport.cycle();
         for (Country country : countries.values()) {
             int chunks = 0;
             for (String o : chunkOwners.values()) if (o.equals(country.getName())) chunks++;
@@ -710,6 +742,7 @@ public class PoliticsManager extends SavedData {
                     thisCycleIncome.merge(city, perBlock, Integer::sum);
                 } else {
                     country.balance += perBlock;
+                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_tax", perBlock);
                 }
             }
 
@@ -720,10 +753,27 @@ public class PoliticsManager extends SavedData {
                 int fedTax     = country.federalTaxRate > 0 ? cycleIncome * country.federalTaxRate / 100 : 0;
                 country.cityBalances.merge(city, cycleIncome - fedTax, Integer::sum);
                 country.balance += fedTax;
+                net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_federal", fedTax);
+            }
+
+            // Colonies and villages of citizens pay tax like tax blocks: a city gets it and shares it with the nation
+            for (net.krona.politicsmod.integration.settlement.Settlements.Income in
+                    : net.krona.politicsmod.integration.settlement.Settlements.incomeOf(level, this, country.getName())) {
+                String city = chunkCity.get(in.center());
+                if (city != null && country.cities.contains(city)) {
+                    int fedTax = country.federalTaxRate > 0 ? in.amount() * country.federalTaxRate / 100 : 0;
+                    country.cityBalances.merge(city, in.amount() - fedTax, Integer::sum);
+                    country.balance += fedTax;
+                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_settlements", fedTax);
+                } else {
+                    country.balance += in.amount();
+                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_settlements", in.amount());
+                }
             }
 
             // Territory upkeep: the treasury can go into debt, down to the configured limit
-            charge(country, chunks * PoliticsConfig.get().upkeepPerChunk);
+            net.krona.politicsmod.economy.DailyReport.expense(country, "gui.politicsmod.economy.line_upkeep",
+                    charge(country, net.krona.politicsmod.economy.LandPrices.upkeep(chunks)));
         }
 
         // Tribute payments (separate pass)
@@ -734,7 +784,10 @@ public class PoliticsManager extends SavedData {
             if (payer == null || receiver == null) continue;
             int amount = payer.taxBlocks.size() * PoliticsConfig.get().incomePerTaxBlock * rate / 100;
             if (amount > 0) {
-                receiver.balance += charge(payer, amount);
+                int paid = charge(payer, amount);
+                receiver.balance += paid;
+                net.krona.politicsmod.economy.DailyReport.expense(payer, "gui.politicsmod.economy.line_tribute", paid);
+                net.krona.politicsmod.economy.DailyReport.income(receiver, "gui.politicsmod.report.tribute_in", paid);
             }
         }
 
@@ -743,6 +796,7 @@ public class PoliticsManager extends SavedData {
             for (String partner : country.embassyLinks.values()) {
                 if (countries.containsKey(partner) && !isAtWar(country.getName(), partner)) {
                     country.balance += embassyIncome(country);
+                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_embassies", embassyIncome(country));
                 }
             }
         }
@@ -763,6 +817,8 @@ public class PoliticsManager extends SavedData {
             if (borrower == null || lender == null) { it.remove(); continue; }
             int paid = charge(borrower, Math.min(loan.installment, loan.remaining));
             lender.balance += paid;
+            net.krona.politicsmod.economy.DailyReport.expense(borrower, "gui.politicsmod.economy.line_loan_payment", paid);
+            net.krona.politicsmod.economy.DailyReport.income(lender, "gui.politicsmod.economy.line_loan_income", paid);
             loan.remaining -= paid;
             if (loan.remaining <= 0) {
                 it.remove();
@@ -773,7 +829,10 @@ public class PoliticsManager extends SavedData {
         // ── Vaults: cap the maximum balance
         for (Country country : countries.values()) {
             int maxBalance = PoliticsConfig.get().baseMaxBalance + country.vaultBlocks.size() * PoliticsConfig.get().vaultBalanceBonus;
-            if (country.balance > maxBalance) country.balance = maxBalance;
+            if (country.balance > maxBalance) {
+                net.krona.politicsmod.economy.DailyReport.capped(country, country.balance - maxBalance);
+                country.balance = maxBalance;
+            }
         }
 
         // ── Bankruptcy: announce going under and getting out once
@@ -896,6 +955,7 @@ public class PoliticsManager extends SavedData {
         // State listings disappear with the country; personal listings stay, they belong to players
         listings.removeIf(l -> !l.personal && l.seller.equals(name));
         countries.remove(name);
+        settlementData.forgetCountry(name);
         postNews("news.politicsmod.country_dissolved", List.of(name), name);
         net.krona.politicsmod.network.SyncFlagsPayload.broadcast(this);
         setDirty();

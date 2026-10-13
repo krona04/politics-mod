@@ -18,6 +18,16 @@ repositories {
         forRepository { maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' } }
         filter { includeGroup 'maven.modrinth' }
     }
+    // Settlement mods (NeoForge only): MineColonies colonies and Millénaire villages
+    maven {
+        name = 'LDTTeam'
+        url = 'https://ldtteam.jfrog.io/ldtteam/modding/'
+        content { includeGroup 'com.ldtteam' }
+    }
+    exclusiveContent {
+        forRepository { maven { name = 'CurseMaven'; url = 'https://cursemaven.com' } }
+        filter { includeGroup 'curse.maven' }
+    }
 }
 
 configurations {
@@ -45,6 +55,9 @@ dependencies {
     compileOnly "de.bluecolored.bluemap:BlueMapAPI:$rootProject.bluemap_api_version"
     compileOnly "us.dynmap:DynmapCoreAPI:$rootProject.dynmap_api_version"
     journeymapMod "maven.modrinth:journeymap:$rootProject.journeymap_version"
+    compileOnly("com.ldtteam:minecolonies:$rootProject.minecolonies_version") { transitive = false }
+    // Millénaire is published only on CurseForge
+    compileOnly("curse.maven:millenaire-270871:$rootProject.millenaire_file_id") { transitive = false }
     compileOnly files({
         zipTree(configurations.journeymapMod.singleFile)
                 .matching { include 'META-INF/jarjar/journeymap-api-*.jar' }

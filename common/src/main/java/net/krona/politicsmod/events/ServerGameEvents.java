@@ -31,6 +31,7 @@ public class ServerGameEvents {
 
     private static int economyTimer = 0;
     private static int radarTimer    = 0;
+    private static int settlementSeconds = 0;
     private static int secondTimer   = 0;
 
     // 1. Block break protection (plots, roles, sieges)
@@ -91,6 +92,11 @@ public class ServerGameEvents {
             if (mgr != null) {
                 net.krona.politicsmod.politics.ElectionService.tick(mgr);
                 net.krona.politicsmod.integration.webmap.WebMaps.tick(mgr);
+                // Colonies and villages: break-aways, news and colony ranks, every 10 seconds
+                if (++settlementSeconds >= 10) {
+                    settlementSeconds = 0;
+                    net.krona.politicsmod.integration.settlement.Settlements.sync(server, mgr);
+                }
             }
         }
 
@@ -109,15 +115,10 @@ public class ServerGameEvents {
 
                 if (manager != null) {
                     manager.processEconomyCycle(overworld);
-
-                    server.getPlayerList().broadcastSystemMessage(
-                            Component.translatable("message.politicsmod.economy.cycle_complete")
-                                    .withStyle(ChatFormatting.AQUA),
-                            false
-                    );
                 }
             }
         }
+        net.krona.politicsmod.economy.DailyReport.tick(server);
     }
 
     private static void checkRadars(MinecraftServer server, ServerLevel level, PoliticsManager manager) {

@@ -7,6 +7,7 @@ import net.krona.politicsmod.client.dashboard.DiplomacyTab;
 import net.krona.politicsmod.client.dashboard.EconomyTab;
 import net.krona.politicsmod.client.dashboard.MapTab;
 import net.krona.politicsmod.client.dashboard.NewsTab;
+import net.krona.politicsmod.client.dashboard.SettlementsTab;
 import net.krona.politicsmod.client.dashboard.OverviewTab;
 import net.krona.politicsmod.client.dashboard.PoliticsTab;
 import net.krona.politicsmod.client.ui.FlatButton;
@@ -30,7 +31,7 @@ import java.util.List;
  */
 public class CountryDashboardScreen extends PoliticsScreen {
 
-    private static final String[] TAB_KEYS = {"main", "map", "citizens", "politics", "diplomacy", "economy", "news"};
+    private static final String[] TAB_KEYS = {"main", "map", "citizens", "politics", "diplomacy", "economy", "news", "settlements"};
     private static final int HEADER = 24;
     /** Ticks to wait after a command before requesting fresh data (commands are not processed instantly). */
     private static final int REFRESH_DELAY_TICKS = 10;
@@ -50,6 +51,8 @@ public class CountryDashboardScreen extends PoliticsScreen {
     private int activeTab;
     private int px, py, pw, ph, sidebar;
     private int refreshInTicks = -1;
+    private static final int SETTLEMENTS_TAB = 7;
+    private boolean settlementsShown;
     private int periodic = 0;
 
     public CountryDashboardScreen(String countryName, int balance, List<String> cities, String flagUrl, String playerRole) {
@@ -61,13 +64,17 @@ public class CountryDashboardScreen extends PoliticsScreen {
         this.playerRole = playerRole;
         this.tabs = new DashboardTab[]{
                 new OverviewTab(this), new MapTab(this), new CitizensTab(this), new PoliticsTab(this),
-                new DiplomacyTab(this), new EconomyTab(this), new NewsTab(this)};
+                new DiplomacyTab(this), new EconomyTab(this), new NewsTab(this), new SettlementsTab(this)};
         this.activeTab = Math.min(lastTab, tabs.length - 1);
     }
 
     // ── Accessors for tabs ───────────────────────────────────────────────
 
     public String countryName() { return countryName; }
+
+    private static boolean settlementsAvailable() {
+        return ClientPoliticsData.countryDetails != null && ClientPoliticsData.countryDetails.settlementsEnabled();
+    }
     public String playerRole() { return playerRole; }
     public List<String> cities() { return cities; }
     public String flagUrl() { return flagUrl; }
@@ -137,7 +144,11 @@ public class CountryDashboardScreen extends PoliticsScreen {
         }
         sidebar = Math.max(84, Math.min(112, longest + 26));
 
+        // Colonies and villages only when MineColonies or Millénaire is on the server; that tab is the last one
+        settlementsShown = settlementsAvailable();
+        if (activeTab == SETTLEMENTS_TAB && !settlementsShown) activeTab = 0;
         for (int i = 0; i < tabs.length; i++) {
+            if (i == SETTLEMENTS_TAB && !settlementsShown) continue;
             final int tab = i;
             addRenderableWidget(new FlatButton(px + 4, py + 40 + i * 18, sidebar - 8, 17,
                     Component.translatable("gui.politicsmod.dashboard.tab." + TAB_KEYS[i]), FlatButton.Style.TAB,
@@ -163,6 +174,7 @@ public class CountryDashboardScreen extends PoliticsScreen {
         super.tick();
         if (refreshInTicks > 0 && --refreshInTicks == 0) requestDetails();
         if (++periodic >= PERIODIC_REFRESH_TICKS) requestDetails();
+        if (settlementsShown != settlementsAvailable()) rebuildWidgets();
         tabs[activeTab].update();
     }
 

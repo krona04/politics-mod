@@ -8,6 +8,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.config.PoliticsConfig;
+import net.krona.politicsmod.integration.settlement.Settlement;
+import net.krona.politicsmod.integration.settlement.Settlements;
 import net.krona.politicsmod.platform.Permissions;
 import net.krona.politicsmod.politics.Country;
 import net.krona.politicsmod.politics.CountryRole;
@@ -107,7 +109,64 @@ public final class StateCommands {
                 .executes(ctx -> showNews(ctx, 10))
                 .then(Commands.argument("count", IntegerArgumentType.integer(1, 50))
                     .executes(ctx -> showNews(ctx, IntegerArgumentType.getInteger(ctx, "count")))))
+
+            .then(Commands.literal("settlement")
+                .requires(src -> Permissions.command(src, "settlement"))
+                .executes(StateCommands::listSettlements)
+                .then(Commands.literal("annex")
+                    .then(Commands.argument("village", StringArgumentType.greedyString())
+                        .suggests((ctx, b) -> suggestSettlements(ctx, b, Settlement.Status.ANNEXABLE))
+                        .executes(ctx -> changeSettlement(ctx, StringArgumentType.getString(ctx, "village"), true))))
+                .then(Commands.literal("release")
+                    .then(Commands.argument("village", StringArgumentType.greedyString())
+                        .suggests((ctx, b) -> suggestSettlements(ctx, b, Settlement.Status.ANNEXED))
+                        .executes(ctx -> changeSettlement(ctx, StringArgumentType.getString(ctx, "village"), false)))))
         );
+    }
+
+    // ── Settlements (MineColonies, Millénaire) ───────────────────────────
+
+    private static int listSettlements(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer p = ctx.getSource().getPlayerOrException();
+        PoliticsManager mgr = PoliticsManager.get(p.level());
+        Country c = mgr == null ? null : countryOf(p, mgr);
+        if (c == null) return 0;
+        if (!Settlements.enabled()) { fail(p, "message.politicsmod.settlement.no_mods"); return 0; }
+        List<Settlement> list = Settlements.of(mgr.overworld(), mgr, c.getName());
+        p.sendSystemMessage(Component.translatable("message.politicsmod.settlement.header", c.getName(), list.size()).withStyle(ChatFormatting.GOLD));
+        if (list.isEmpty()) {
+            p.sendSystemMessage(Component.translatable("gui.politicsmod.settlements.empty", PoliticsConfig.get().villageAnnexReputation)
+                    .withStyle(ChatFormatting.GRAY));
+        }
+        for (Settlement s : list) {
+            Component status = Component.translatable("gui.politicsmod.settlements.status." + s.status().name().toLowerCase(java.util.Locale.ROOT));
+            p.sendSystemMessage(Component.literal(" " + s.name() + " ").withStyle(ChatFormatting.YELLOW)
+                    .append(Component.literal("[").append(status).append("] ").withStyle(ChatFormatting.AQUA))
+                    .append(Component.translatable("message.politicsmod.settlement.line", s.population(), s.tax(),
+                            s.center().x * 16 + 8, s.center().z * 16 + 8).withStyle(ChatFormatting.GRAY)));
+        }
+        return 1;
+    }
+
+    private static int changeSettlement(CommandContext<CommandSourceStack> ctx, String village, boolean annex) throws CommandSyntaxException {
+        ServerPlayer p = ctx.getSource().getPlayerOrException();
+        PoliticsManager mgr = PoliticsManager.get(p.level());
+        Country c = mgr == null ? null : leaderCountry(p, mgr);
+        if (c == null) return 0;
+        Settlements.Result r = annex ? Settlements.annex(mgr.overworld(), mgr, c.getName(), village)
+                : Settlements.release(mgr.overworld(), mgr, c.getName(), village);
+        p.sendSystemMessage(r.message().copy().withStyle(r.ok() ? ChatFormatting.GREEN : ChatFormatting.RED));
+        return r.ok() ? 1 : 0;
+    }
+
+    private static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestSettlements(
+            CommandContext<CommandSourceStack> ctx, com.mojang.brigadier.suggestion.SuggestionsBuilder builder, Settlement.Status status) {
+        ServerPlayer p = ctx.getSource().getPlayer();
+        PoliticsManager mgr = p == null ? null : PoliticsManager.get(p.level());
+        String country = mgr == null ? null : mgr.getPlayerCountry(p.getUUID());
+        if (country == null) return builder.buildFuture();
+        return SharedSuggestionProvider.suggest(Settlements.of(mgr.overworld(), mgr, country).stream()
+                .filter(s -> s.status() == status).map(Settlement::name), builder);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────

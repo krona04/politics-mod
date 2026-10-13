@@ -40,6 +40,8 @@ public class MapTab extends DashboardTab {
 
     private int mapX, mapY, mapSize, sideX, sideW;
     private FlatButton btnCity, btnAssign, btnClaim, btnCapital, btnProtection, btnClear;
+    /** Cost of the selection last shown in the claim tooltip, to rebuild the tooltip only when it changes. */
+    private int shownCost = -1;
     private static final int BTN_H = 15, BTN_STEP = 17;
 
     public MapTab(CountryDashboardScreen screen) {
@@ -128,6 +130,7 @@ public class MapTab extends DashboardTab {
         btnClaim.visible = screen.isLeader();
         btnClaim.active = free > 0;
         btnClaim.setMessage(Component.translatable("gui.politicsmod.map.claim_country_n", free));
+        updateClaimCost();
         btnCapital.visible = screen.isLeader();
         btnCapital.active = city != null;
         btnProtection.visible = screen.isLeader() || "MAYOR".equals(screen.playerRole());
@@ -150,13 +153,67 @@ public class MapTab extends DashboardTab {
     }
 
     private void claimForCountry() {
-        for (ChunkPos p : selected) {
-            if (ClientPoliticsData.getChunkInfo(p) == null) {
-                ModNetworking.toServer(new ClaimLandPayload(p.getWorldPosition(), screen.countryName(), "", false));
-            }
+        // In the order the cost was estimated in, so the server charges what the tooltip said
+        for (ChunkPos p : claimOrder(new ArrayList<>())) {
+            ModNetworking.toServer(new ClaimLandPayload(p.getWorldPosition(), screen.countryName(), "", false));
         }
         selected.clear();
         screen.refreshSoon();
+    }
+
+    /**
+     * Free selected chunks in buying order: chunks that touch the country's land (or chunks bought before them)
+     * come first, so a connected selection is bought without outposts. Fills {@code touching} alongside.
+     */
+    private List<ChunkPos> claimOrder(List<Boolean> touching) {
+        List<ChunkPos> left = new ArrayList<>();
+        for (ChunkPos p : selected) if (ClientPoliticsData.getChunkInfo(p) == null) left.add(p);
+        left.sort((a, b) -> a.x != b.x ? Integer.compare(a.x, b.x) : Integer.compare(a.z, b.z));
+        Set<ChunkPos> bought = new HashSet<>();
+        List<ChunkPos> order = new ArrayList<>();
+        while (!left.isEmpty()) {
+            int pick = -1;
+            for (int i = 0; i < left.size() && pick < 0; i++) if (touchesOwn(left.get(i), bought)) pick = i;
+            touching.add(pick >= 0);
+            ChunkPos p = left.remove(Math.max(pick, 0));
+            bought.add(p);
+            order.add(p);
+        }
+        return order;
+    }
+
+    private boolean touchesOwn(ChunkPos p, Set<ChunkPos> bought) {
+        for (ChunkPos n : new ChunkPos[]{new ChunkPos(p.x + 1, p.z), new ChunkPos(p.x - 1, p.z),
+                new ChunkPos(p.x, p.z + 1), new ChunkPos(p.x, p.z - 1)}) {
+            if (bought.contains(n)) return true;
+            ClientPoliticsData.ChunkInfo info = ClientPoliticsData.getChunkInfo(n);
+            if (info != null && info.country().equals(screen.countryName())) return true;
+        }
+        return false;
+    }
+
+    /** Shows what the selected free chunks will cost, with the same rules the server uses. */
+    private void updateClaimCost() {
+        CountryDetailsPayload d = details();
+        List<Boolean> touching = new ArrayList<>();
+        List<ChunkPos> order = d == null ? List.of() : claimOrder(touching);
+        int cost = 0, outposts = 0;
+        for (int i = 0; i < order.size(); i++) {
+            cost += d.landPrices().price(d.economy().chunks() + i, touching.get(i));
+            if (!touching.get(i)) outposts++;
+        }
+        int key = order.isEmpty() ? 0 : cost * 31 + outposts + 1;
+        if (key == shownCost) return;
+        shownCost = key;
+        Component tip = Component.translatable("gui.politicsmod.map.claim_country_hint");
+        if (!order.isEmpty()) {
+            tip = tip.copy().append("\n").append(Component.translatable("gui.politicsmod.map.claim_cost", cost));
+            if (outposts > 0) {
+                tip = tip.copy().append("\n").append(Component.translatable("gui.politicsmod.map.claim_outposts",
+                        outposts, d.landPrices().outpostMultiplier()));
+            }
+        }
+        btnClaim.tooltip(tip);
     }
 
     private void makeCapital() {
@@ -187,6 +244,15 @@ public class MapTab extends DashboardTab {
 
     private int cellZ(ChunkPos c, ChunkPos center) {
         return (int) Math.floor(mapY + mapSize / 2.0 + (c.z - center.z + offsetZ - 0.5) * scale);
+    }
+
+    private CountryDetailsPayload.SettlementInfo settlementAt(ChunkPos pos) {
+        CountryDetailsPayload d = details();
+        if (d == null) return null;
+        for (CountryDetailsPayload.SettlementInfo s : d.settlements()) {
+            if (s.chunkX() == pos.x && s.chunkZ() == pos.z) return s;
+        }
+        return null;
     }
 
     private Map<String, String> relations() {
@@ -244,6 +310,18 @@ public class MapTab extends DashboardTab {
             g.renderOutline(sx, sz, scale, scale, 0xFFFFFFFF);
         }
 
+        // Colonies and villages: a marker on the chunk with their center
+        CountryDetailsPayload d = details();
+        if (d != null) {
+            for (CountryDetailsPayload.SettlementInfo s : d.settlements()) {
+                ChunkPos p = new ChunkPos(s.chunkX(), s.chunkZ());
+                int mxc = cellX(p, center) + scale / 2, mzc = cellZ(p, center) + scale / 2;
+                int color = s.statusEnum().belongs() ? UiKit.ACCENT : UiKit.WARN;
+                g.fill(mxc - 3, mzc - 3, mxc + 4, mzc + 4, 0xFF000000);
+                g.fill(mxc - 2, mzc - 2, mxc + 3, mzc + 3, color);
+            }
+        }
+
         // Player position inside their chunk
         var player = Minecraft.getInstance().player;
         if (player != null) {
@@ -295,6 +373,12 @@ public class MapTab extends DashboardTab {
                 Component sub = info.city().isEmpty() ? Component.translatable("gui.politicsmod.map.country")
                         : Component.translatable("gui.politicsmod.map.city_named", info.city());
                 UiKit.text(g, font, sub, sideX + 4, ly + 25, sideW - 8, UiKit.TEXT_DIM);
+            }
+            // A colony or village centered here: its name over the last line
+            CountryDetailsPayload.SettlementInfo s = settlementAt(hovered);
+            if (s != null) {
+                g.fill(sideX + 1, ly + 24, sideX + sideW - 1, ly + 35, UiKit.CARD);
+                UiKit.text(g, font, Component.literal("⌂ " + s.name()), sideX + 4, ly + 25, sideW - 8, UiKit.ACCENT);
             }
         }
         UiKit.text(g, font, Component.translatable("gui.politicsmod.map.selected", selected.size()), sideX, selectedLineY(),

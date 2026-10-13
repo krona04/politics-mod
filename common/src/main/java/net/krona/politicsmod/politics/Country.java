@@ -58,7 +58,7 @@ public class Country {
 
     public Country(String name, UUID founder) {
         this.name = name;
-        this.balance = 1000;
+        this.balance = net.krona.politicsmod.config.PoliticsConfig.get().startingTreasury;
         if (founder != null) this.members.put(founder, CountryRole.LEADER);
     }
 

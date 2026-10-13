@@ -11,6 +11,8 @@ import net.krona.politicsmod.politics.CountryRole;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.krona.politicsmod.economy.LandPrices;
+import net.krona.politicsmod.integration.settlement.Settlements;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -72,12 +74,22 @@ public record ClaimLandPayload(BlockPos center, String countryName, String cityN
                 }
 
                 int CITY_CLAIM_PRICE = PoliticsConfig.get().cityChunkPrice;
-                if (country.balance < CITY_CLAIM_PRICE) {
-                    player.sendSystemMessage(Component.translatable("message.politicsmod.claim.no_funds_city", CITY_CLAIM_PRICE).withStyle(ChatFormatting.RED));
-                    return;
+                // The mayor of this city pays from its treasury, like /politicsmod claim <city>
+                boolean fromCity = role == CountryRole.MAYOR && payload.cityName().equals(manager.getMayorCity(playerCountryName, player.getUUID()));
+                if (fromCity) {
+                    int cityBal = country.cityBalances.getOrDefault(payload.cityName(), 0);
+                    if (cityBal < CITY_CLAIM_PRICE) {
+                        player.sendSystemMessage(Component.translatable("message.politicsmod.city.no_city_funds", CITY_CLAIM_PRICE).withStyle(ChatFormatting.RED));
+                        return;
+                    }
+                    country.cityBalances.put(payload.cityName(), cityBal - CITY_CLAIM_PRICE);
+                } else {
+                    if (country.balance < CITY_CLAIM_PRICE) {
+                        player.sendSystemMessage(Component.translatable("message.politicsmod.claim.no_funds_city", CITY_CLAIM_PRICE).withStyle(ChatFormatting.RED));
+                        return;
+                    }
+                    country.balance -= CITY_CLAIM_PRICE;
                 }
-
-                country.balance -= CITY_CLAIM_PRICE;
                 manager.claimChunk(chunkPos, 0, playerCountryName, payload.cityName());
                 player.sendSystemMessage(Component.translatable("message.politicsmod.claim.city_expanded", CITY_CLAIM_PRICE).withStyle(ChatFormatting.GREEN));
 
@@ -91,7 +103,12 @@ public record ClaimLandPayload(BlockPos center, String countryName, String cityN
                     return;
                 }
 
-                int CLAIM_PRICE = PoliticsConfig.get().countryChunkPrice;
+                Component blocked = Settlements.claimBlocker(player.serverLevel(), manager, playerCountryName, chunkPos);
+                if (blocked != null) {
+                    player.sendSystemMessage(blocked.copy().withStyle(ChatFormatting.RED));
+                    return;
+                }
+                int CLAIM_PRICE = LandPrices.countryChunk(manager, playerCountryName, chunkPos);
                 if (country.balance < CLAIM_PRICE) {
                     player.sendSystemMessage(Component.translatable("message.politicsmod.claim.no_funds_country", CLAIM_PRICE).withStyle(ChatFormatting.RED));
                     return;

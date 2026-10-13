@@ -59,8 +59,24 @@ public record CountryDetailsPayload(
         List<News> news,        // newest last
         int siegeCost,
         int maxLoanInterest,
-        int maxLoanCycles
+        int maxLoanCycles,
+        net.krona.politicsmod.economy.LandPrices.Rules landPrices,
+        boolean settlementsEnabled, // MineColonies or Millénaire is installed and switched on
+        int annexReputation,        // reputation a citizen needs in a village before it can be annexed
+        List<SettlementInfo> settlements
 ) implements CustomPacketPayload {
+
+    /** A colony or village of the country, or one it may annex. Kind and status are the Settlement enum ordinals. */
+    public record SettlementInfo(String key, int kind, String name, int chunkX, int chunkZ, int population, int mood,
+                                 String owner, int status, int tax) {
+        public net.krona.politicsmod.integration.settlement.Settlement.Kind kindEnum() {
+            return net.krona.politicsmod.integration.settlement.Settlement.Kind.values()[kind];
+        }
+
+        public net.krona.politicsmod.integration.settlement.Settlement.Status statusEnum() {
+            return net.krona.politicsmod.integration.settlement.Settlement.Status.values()[status];
+        }
+    }
 
     /** A protection flag set explicitly; target "" = the whole country, otherwise a city name. */
     public record FlagOverride(String target, String flag, boolean value) {
@@ -213,7 +229,21 @@ public record CountryDetailsPayload(
                 news,
                 cfg.siegeCost,
                 cfg.maxLoanInterestPercent,
-                cfg.maxLoanCycles);
+                cfg.maxLoanCycles,
+                net.krona.politicsmod.economy.LandPrices.Rules.current(),
+                net.krona.politicsmod.integration.settlement.Settlements.enabled(),
+                cfg.villageAnnexReputation,
+                settlementInfos(mgr, countryName));
+    }
+
+    private static List<SettlementInfo> settlementInfos(PoliticsManager mgr, String countryName) {
+        List<SettlementInfo> list = new ArrayList<>();
+        for (net.krona.politicsmod.integration.settlement.Settlement s
+                : net.krona.politicsmod.integration.settlement.Settlements.of(mgr.overworld(), mgr, countryName)) {
+            list.add(new SettlementInfo(s.key(), s.kind().ordinal(), s.name(), s.center().x, s.center().z, s.population(),
+                    s.mood(), s.owner(), s.status().ordinal(), s.tax()));
+        }
+        return list;
     }
 
     private static ElectionInfo electionInfo(Country country, UUID me) {
@@ -299,6 +329,7 @@ public record CountryDetailsPayload(
         buf.writeInt(e.loanPayment());
         buf.writeInt(e.loanIncome());
         buf.writeInt(e.debt());
+        buf.writeInt(e.settlementIncome());
 
         buf.writeCollection(p.flags, (b, f) -> {
             b.writeUtf(f.target());
@@ -358,6 +389,26 @@ public record CountryDetailsPayload(
         buf.writeVarInt(p.siegeCost);
         buf.writeVarInt(p.maxLoanInterest);
         buf.writeVarInt(p.maxLoanCycles);
+        var lp = p.landPrices;
+        buf.writeVarInt(lp.base());
+        buf.writeVarInt(lp.growthPercent());
+        buf.writeVarInt(lp.growthStart());
+        buf.writeVarInt(lp.max());
+        buf.writeVarInt(lp.outpostMultiplier());
+        buf.writeBoolean(p.settlementsEnabled);
+        buf.writeVarInt(p.annexReputation);
+        buf.writeCollection(p.settlements, (b, s) -> {
+            b.writeUtf(s.key);
+            b.writeVarInt(s.kind);
+            b.writeUtf(s.name);
+            b.writeInt(s.chunkX);
+            b.writeInt(s.chunkZ);
+            b.writeVarInt(s.population);
+            b.writeInt(s.mood);
+            b.writeUtf(s.owner);
+            b.writeVarInt(s.status);
+            b.writeVarInt(s.tax);
+        });
     }
 
     private static CountryDetailsPayload read(FriendlyByteBuf buf) {
@@ -375,7 +426,7 @@ public record CountryDetailsPayload(
                 buf.readUtf(), buf.readInt(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-                buf.readInt(), buf.readInt(), buf.readInt());
+                buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt());
 
         List<FlagOverride> flags = buf.readList(b -> new FlagOverride(b.readUtf(), b.readUtf(), b.readBoolean()));
         int flagDefaults = buf.readVarInt();
@@ -400,6 +451,11 @@ public record CountryDetailsPayload(
 
         return new CountryDetailsPayload(members, relations, pendingFrom, pendingType, warCost, secedeThreshold, permissions,
                 economy, flags, flagDefaults, capital, cities, laws, lawCooldown, election, sieges, loans, offer, news,
-                buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+                buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+                new net.krona.politicsmod.economy.LandPrices.Rules(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+                        buf.readVarInt(), buf.readVarInt()),
+                buf.readBoolean(), buf.readVarInt(),
+                buf.readList(b -> new SettlementInfo(b.readUtf(), b.readVarInt(), b.readUtf(), b.readInt(), b.readInt(),
+                        b.readVarInt(), b.readInt(), b.readUtf(), b.readVarInt(), b.readVarInt())));
     }
 }

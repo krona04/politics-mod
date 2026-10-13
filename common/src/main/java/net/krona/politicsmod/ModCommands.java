@@ -793,7 +793,11 @@ public class ModCommands {
             if (curOwner != null) {
                 ctx.getSource().sendFailure(Component.translatable("message.politicsmod.claim.chunk_taken").withStyle(ChatFormatting.RED)); return 0;
             }
-            int price = PoliticsConfig.get().countryChunkPrice;
+            Component blocked = net.krona.politicsmod.integration.settlement.Settlements.claimBlocker(player.serverLevel(), mgr, cn, pos);
+            if (blocked != null) {
+                ctx.getSource().sendFailure(blocked.copy().withStyle(ChatFormatting.RED)); return 0;
+            }
+            int price = net.krona.politicsmod.economy.LandPrices.countryChunk(mgr, cn, pos);
             if (c.balance < price) {
                 ctx.getSource().sendFailure(Component.translatable("message.politicsmod.claim.no_funds_country", price).withStyle(ChatFormatting.RED)); return 0;
             }

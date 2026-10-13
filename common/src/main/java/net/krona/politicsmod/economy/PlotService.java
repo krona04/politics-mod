@@ -71,6 +71,7 @@ public final class PlotService {
                 continue;
             }
             wallet.apply(-plot.rentPrice, WalletTransaction.TYPE_RENT, plot.city, historyLimit);
+            DailyReport.rentPaid(owner, plot.rentPrice);
             country.cityBalances.merge(plot.city, plot.rentPrice, Integer::sum);
         }
         mgr.setDirty();

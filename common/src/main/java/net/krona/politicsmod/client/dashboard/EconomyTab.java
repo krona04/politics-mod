@@ -102,6 +102,7 @@ public class EconomyTab extends DashboardTab {
         ly = money(g, ly, "gui.politicsmod.economy.line_tax", e.directIncome(), true);
         ly = money(g, ly, "gui.politicsmod.economy.line_federal", e.federalTaxIncome(), true);
         ly = money(g, ly, "gui.politicsmod.economy.line_embassies", e.embassyIncome(), true);
+        if (e.settlementIncome() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_settlements", e.settlementIncome(), true);
         ly = money(g, ly, "gui.politicsmod.economy.line_upkeep", e.upkeep(), false);
         if (e.tributeAmount() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_tribute", e.tributeAmount(), false);
         if (e.salaryCost() > 0) {

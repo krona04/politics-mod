@@ -3,15 +3,12 @@ package net.krona.politicsmod.economy;
 import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.config.PoliticsConfig;
 import net.krona.politicsmod.politics.Country;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -166,8 +163,6 @@ public final class WalletService {
                 .thenComparing(e -> e.getKey().toString()));
 
         int historyLimit = PoliticsConfig.get().walletHistorySize;
-        int unpaidCount = 0;
-        int unpaidTotal = 0;
 
         for (Map.Entry<UUID, Integer> e : order) {
             UUID playerId = e.getKey();
@@ -178,26 +173,17 @@ public final class WalletService {
             int tax = incomeTax(country, gross);
             int cost = gross - tax;
             if (country.balance < cost) {
-                unpaidCount++;
-                unpaidTotal += cost;
-                notify(server, playerId, Component.translatable("message.politicsmod.wallet.salary_unpaid", country.getName())
-                        .withStyle(ChatFormatting.RED));
+                DailyReport.salaryUnpaid(country, playerId, cost);
                 continue;
             }
 
             country.balance -= cost;
             wallet.apply(gross, WalletTransaction.TYPE_SALARY, country.getName(), historyLimit);
             if (tax > 0) wallet.apply(-tax, WalletTransaction.TYPE_INCOME_TAX, country.getName(), historyLimit);
-            notify(server, playerId, Component.translatable("message.politicsmod.wallet.salary_paid", gross - tax, gross, tax)
-                    .withStyle(ChatFormatting.GREEN));
-        }
-
-        if (unpaidCount > 0) {
-            UUID leader = leaderOf(country);
-            if (leader != null) {
-                notify(server, leader, Component.translatable("message.politicsmod.wallet.salaries_unpaid_leader", unpaidCount, unpaidTotal)
-                        .withStyle(ChatFormatting.RED));
-            }
+            // Salaries and the income tax that comes back, shown as two lines like on the Economy tab
+            DailyReport.expense(country, "gui.politicsmod.economy.line_salaries", gross);
+            DailyReport.income(country, "gui.politicsmod.economy.line_income_tax", tax);
+            DailyReport.salaryPaid(playerId, gross, tax);
         }
         mgr.setDirty();
     }
@@ -206,18 +192,5 @@ public final class WalletService {
 
     private static int room(Wallet wallet) {
         return Math.max(0, PoliticsConfig.get().walletMaxBalance - wallet.balance());
-    }
-
-    private static UUID leaderOf(Country country) {
-        for (Map.Entry<UUID, net.krona.politicsmod.politics.CountryRole> e : country.getMembers().entrySet()) {
-            if (e.getValue() == net.krona.politicsmod.politics.CountryRole.LEADER) return e.getKey();
-        }
-        return null;
-    }
-
-    private static void notify(MinecraftServer server, UUID playerId, Component message) {
-        if (server == null) return;
-        ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-        if (player != null) player.sendSystemMessage(message);
     }
 }
