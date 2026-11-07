@@ -16,7 +16,7 @@ import net.minecraft.world.level.Level;
 public class GuideBookItem extends Item {
 
     /** Pages are guide.politicsmod.page.1 … page.PAGES in the language files. */
-    public static final int PAGES = 16;
+    public static final int PAGES = 18;
 
     public GuideBookItem(Properties properties) {
         super(properties);

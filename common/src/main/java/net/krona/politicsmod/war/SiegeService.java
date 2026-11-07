@@ -4,7 +4,6 @@ import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.config.PoliticsConfig;
 import net.krona.politicsmod.politics.Country;
 import net.krona.politicsmod.politics.CountryRole;
-import net.krona.politicsmod.politics.Law;
 import net.krona.politicsmod.politics.Notify;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -116,9 +115,11 @@ public final class SiegeService {
         if (attacker.balance < cost) return Component.translatable("message.politicsmod.siege.no_funds", cost);
 
         attacker.balance -= cost;
-        int required = PoliticsConfig.get().siegeHoldSeconds * 20;
         Country def = mgr.getCountry(defender);
-        if (def.hasLaw(Law.MARTIAL_LAW)) required *= PoliticsConfig.get().martialLawSiegeMultiplier;
+        // Martial law and other defence modifiers make the defender's land slower to take
+        int required = net.krona.politicsmod.realm.Realm.apply(PoliticsConfig.get().siegeHoldSeconds * 20,
+                net.krona.politicsmod.realm.Realm.percent(def, net.krona.politicsmod.realm.ModifierType.SIEGE_DEFENSE));
+        required = Math.max(20, required);
         SIEGES.add(new Siege(mine, defender, pos, player.level().dimension(), required));
         mgr.setDirty();
 
@@ -187,6 +188,7 @@ public final class SiegeService {
                 s.bar.removeAllPlayers();
                 it.remove();
                 mgr.transferChunk(s.pos, s.attacker);
+                net.krona.politicsmod.realm.Realm.onSiegeWon(mgr, attacker, defender);
                 mgr.postNews("news.politicsmod.siege_won", List.of(s.attacker, s.defender), s.attacker,
                         String.valueOf(s.pos.x), String.valueOf(s.pos.z), s.defender);
                 Component msg = Component.translatable("message.politicsmod.siege.won", s.attacker, s.pos.x, s.pos.z, s.defender)

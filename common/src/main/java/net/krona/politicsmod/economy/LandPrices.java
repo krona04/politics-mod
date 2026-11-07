@@ -16,19 +16,25 @@ public final class LandPrices {
     private LandPrices() {
     }
 
-    /** The configured price rules; a plain record so it can travel in a packet. */
-    public record Rules(int base, int growthPercent, int growthStart, int max, int outpostMultiplier) {
+    /**
+     * The configured price rules of one country; a plain record so it can travel in a packet.
+     * modifierPercent = the country's LAND_PRICE modifiers (prestige, server events).
+     */
+    public record Rules(int base, int growthPercent, int growthStart, int max, int outpostMultiplier, int modifierPercent) {
 
-        public static Rules current() {
+        public static Rules of(net.krona.politicsmod.politics.Country country) {
             PoliticsConfig cfg = PoliticsConfig.get();
+            int percent = country == null ? 0
+                    : net.krona.politicsmod.realm.Realm.percent(country, net.krona.politicsmod.realm.ModifierType.LAND_PRICE);
             return new Rules(cfg.countryChunkPrice, cfg.chunkPriceGrowthPercent, cfg.chunkPriceGrowthStart,
-                    cfg.maxChunkPrice, cfg.outpostPriceMultiplier);
+                    cfg.maxChunkPrice, cfg.outpostPriceMultiplier, percent);
         }
 
         /** Price of the next chunk for a country that owns {@code owned} chunks. */
         public int price(int owned, boolean touching) {
             long grown = (long) base * (100 + (long) growthPercent * Math.max(0, owned - growthStart)) / 100;
             long price = Math.min(Math.max(base, max), grown);
+            price = Math.max(0, price * (100 + modifierPercent) / 100);
             if (!touching) price *= outpostMultiplier;
             return (int) Math.min(Integer.MAX_VALUE, price);
         }
@@ -40,7 +46,7 @@ public final class LandPrices {
      */
     public static int countryChunk(PoliticsManager mgr, String country, ChunkPos pos) {
         if (net.krona.politicsmod.integration.settlement.Settlements.ownLand(mgr.overworld(), mgr, country, pos)) return 0;
-        return Rules.current().price(mgr.getChunksOf(country).size(), touches(mgr, country, pos));
+        return Rules.of(mgr.getCountry(country)).price(mgr.getChunksOf(country).size(), touches(mgr, country, pos));
     }
 
     /** True when one of the four neighbours of the chunk belongs to the country. */

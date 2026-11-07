@@ -203,6 +203,38 @@ public final class PoliticsConfig {
     /** Countries cannot claim the land of other players' colonies or of Millénaire villages they don't control. */
     public boolean settlementsBlockClaims = true;
 
+    // ── Realm: stability, legitimacy, prestige, cores, development (0.5) ─
+    /** The whole layer. Off: no stability, legitimacy, prestige, cores, development or unrest, the economy works as in 0.4. */
+    public boolean realmEnabled = true;
+    /** Stability of a newly founded country, −3…+3. */
+    public int startingStability = 1;
+    /** Tax income per stability level, %: +3 gives +15%, −3 gives −15%. */
+    public int stabilityTaxPercent = 5;
+    /** Progress points that move stability one level. Peace, war, debt and the rest add or take points every cycle. */
+    public int stabilityProgressPerLevel = 100;
+    /** Price of the leader's "restore order" action, $; multiplied by (stability + 4), so it is cheapest in a crisis. */
+    public int stabilizeBaseCost = 1_000;
+    /** Stability progress that action gives. */
+    public int stabilizeProgress = 50;
+    /** Minimum time between two "restore order" actions, minutes. */
+    public int stabilizeCooldownMinutes = 60;
+    /** Economy cycles a new chunk needs to become a core (80 = 4 hours at the default cycle). Lost cores stay remembered. */
+    public int coreCycles = 80;
+    /** Tax blocks on land that is not yet a core bring this share of their income, %. */
+    public int nonCoreTaxPercent = 50;
+    /** Price of the first development level of a city, $; level n costs n times as much. */
+    public int developmentCost = 400;
+    /** Highest development a city can buy; tax blocks add up to 5 more on their own (one per two blocks). */
+    public int maxDevelopment = 10;
+    /** Tax income of a city's tax blocks per development level, %. */
+    public int developmentTaxPercent = 3;
+    /** Unrest (0–100) at which a city's mayor may secede whatever the federal tax. */
+    public int unrestSecedeThreshold = 75;
+    /** Prestige moves toward zero by this many tenths of a percent every cycle (2 = 0.2%). */
+    public int prestigeDecayPerMille = 2;
+    /** How many in-game days the Ledger tab keeps for its graphs. */
+    public int ledgerHistoryDays = 30;
+
     // ── Guide ────────────────────────────────────────────────────────────
     /** Give the in-game guide book to every player the first time they join. */
     public boolean giveGuideOnFirstJoin = true;
@@ -237,6 +269,10 @@ public final class PoliticsConfig {
 
     public long lawCooldownMs() {
         return lawChangeCooldownMinutes * 60_000L;
+    }
+
+    public long stabilizeCooldownMs() {
+        return stabilizeCooldownMinutes * 60_000L;
     }
 
     /** Loads the config from disk. Returns false if the file is broken (previous values are kept). */
@@ -350,6 +386,20 @@ public final class PoliticsConfig {
         maxLoanCycles          = Math.max(1, maxLoanCycles);
         newsMaxEntries         = clamp(newsMaxEntries, 10, 1000);
         webMapUpdateSeconds    = Math.max(5, webMapUpdateSeconds);
+        startingStability      = clamp(startingStability, -3, 3);
+        stabilityTaxPercent    = clamp(stabilityTaxPercent, 0, 100);
+        stabilityProgressPerLevel = Math.max(1, stabilityProgressPerLevel);
+        stabilizeBaseCost      = Math.max(0, stabilizeBaseCost);
+        stabilizeProgress      = Math.max(0, stabilizeProgress);
+        stabilizeCooldownMinutes = Math.max(0, stabilizeCooldownMinutes);
+        coreCycles             = Math.max(0, coreCycles);
+        nonCoreTaxPercent      = clamp(nonCoreTaxPercent, 0, 100);
+        developmentCost        = Math.max(0, developmentCost);
+        maxDevelopment         = clamp(maxDevelopment, 0, 100);
+        developmentTaxPercent  = clamp(developmentTaxPercent, 0, 100);
+        unrestSecedeThreshold  = clamp(unrestSecedeThreshold, 1, 101);
+        prestigeDecayPerMille  = clamp(prestigeDecayPerMille, 0, 1000);
+        ledgerHistoryDays      = clamp(ledgerHistoryDays, 2, 365);
         radarRangeChunks       = clamp(radarRangeChunks, 1, 32);
         radarCheckTicks        = Math.max(20, radarCheckTicks);
     }

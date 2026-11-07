@@ -68,6 +68,7 @@ public final class ModEvents {
                     net.krona.politicsmod.commands.FlagCommands.register(dispatcher);
                     net.krona.politicsmod.commands.GeneralCommands.register(dispatcher);
                     net.krona.politicsmod.commands.StateCommands.register(dispatcher);
+                    net.krona.politicsmod.commands.RealmCommands.register(dispatcher);
                 });
 
         BlockEvent.BREAK.register(

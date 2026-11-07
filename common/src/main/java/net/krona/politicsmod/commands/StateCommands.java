@@ -331,6 +331,7 @@ public final class StateCommands {
         if (cd > 0) { fail(p, "message.politicsmod.law.cooldown", minutes(cd)); return 0; }
         if (enact) c.laws.add(law); else c.laws.remove(law);
         c.lawChangedAt = System.currentTimeMillis();
+        net.krona.politicsmod.realm.Realm.onLawChanged(mgr, c);
         mgr.setDirty();
         mgr.postNews(enact ? "news.politicsmod.law_enacted" : "news.politicsmod.law_repealed", List.of(c.getName()),
                 c.getName(), NewsEntry.TRANSLATE_PREFIX + law.nameKey());

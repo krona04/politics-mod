@@ -4,6 +4,7 @@ import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.config.PoliticsConfig;
 import net.krona.politicsmod.politics.Country;
 import net.krona.politicsmod.politics.CountryRole;
+import net.krona.politicsmod.realm.Realm;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -35,6 +36,12 @@ public final class DailyReport {
         long capped;
         int unpaidSalaries;
         long unpaidTotal;
+
+        long net() {
+            long in = income.values().stream().mapToLong(Long::longValue).sum();
+            long out = expenses.values().stream().mapToLong(Long::longValue).sum();
+            return in - out;
+        }
     }
 
     private static final class PlayerTally {
@@ -115,6 +122,15 @@ public final class DailyReport {
         }
         if (day == lastDay) return;
         lastDay = day;
+        if (cycles > 0) {
+            // One point per day for the Ledger graphs, also when the chat report is off
+            PoliticsManager mgr = PoliticsManager.get(overworld);
+            if (mgr != null) {
+                Map<String, Long> nets = new HashMap<>();
+                for (Map.Entry<String, CountryTally> e : COUNTRIES.entrySet()) nets.put(e.getKey(), e.getValue().net());
+                Realm.snapshot(mgr, day, nets);
+            }
+        }
         if (cycles > 0 && PoliticsConfig.get().economyDailyReport) send(server, day + 1);
         COUNTRIES.clear();
         PLAYERS.clear();
@@ -164,6 +180,12 @@ public final class DailyReport {
         player.sendSystemMessage(Component.literal(" ").append(totals));
         player.sendSystemMessage(Component.literal(" ").append(Component.translatable("message.politicsmod.report.treasury", country.balance)
                 .withStyle(country.balance < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW)));
+        if (Realm.enabled()) {
+            player.sendSystemMessage(Component.literal(" ").append(Component.translatable("message.politicsmod.report.realm",
+                    Realm.signed(country.stability), Math.round(country.legitimacy),
+                    Realm.signed(Math.round(country.prestige)))
+                    .withStyle(country.stability < 0 ? ChatFormatting.RED : ChatFormatting.AQUA)));
+        }
 
         if (t.capped > 0) {
             player.sendSystemMessage(Component.literal(" ").append(Component.translatable("message.politicsmod.report.capped", t.capped)

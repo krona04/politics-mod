@@ -382,6 +382,7 @@ public class ModCommands {
             }
             mgr.setDiplomacy(mine, target, DiplomacyStatus.NEUTRAL);
             mgr.setTribute(mine, target, PoliticsConfig.get().tributeRateDefault);
+            net.krona.politicsmod.realm.Realm.onSurrender(mgr, mgr.getCountry(mine), mgr.getCountry(target));
             mgr.postNews("news.politicsmod.surrender", List.of(mine, target), mine, target,
                     String.valueOf(PoliticsConfig.get().tributeRateDefault));
             pendingDiplomacy.remove(target);
@@ -960,16 +961,24 @@ public class ModCommands {
                 player.sendSystemMessage(Component.translatable("message.politicsmod.city.not_a_mayor").withStyle(ChatFormatting.RED)); return 0;
             }
             net.krona.politicsmod.politics.Country country = mgr.getCountry(countryName);
-            // A bankrupt country can't hold its cities: mayors may leave whatever the tax
-            if (!country.isBankrupt() && country.federalTaxRate < PoliticsConfig.get().secedeThresholdPercent) {
+            // A bankrupt or collapsing country can't hold its cities, nor can it keep a city in revolt:
+            // mayors may leave whatever the tax
+            if (!country.isBankrupt() && country.federalTaxRate < PoliticsConfig.get().secedeThresholdPercent
+                    && !net.krona.politicsmod.realm.Realm.maySecede(mgr, country, cityName)) {
                 player.sendSystemMessage(Component.translatable("message.politicsmod.city.secede_threshold",
-                        country.federalTaxRate, PoliticsConfig.get().secedeThresholdPercent).withStyle(ChatFormatting.RED)); return 0;
+                        country.federalTaxRate, PoliticsConfig.get().secedeThresholdPercent).withStyle(ChatFormatting.RED));
+                if (net.krona.politicsmod.realm.Realm.enabled()) {
+                    player.sendSystemMessage(Component.translatable("message.politicsmod.city.secede_other",
+                            PoliticsConfig.get().unrestSecedeThreshold).withStyle(ChatFormatting.GRAY));
+                }
+                return 0;
             }
             if (mgr.getCountry(cityName) != null) {
                 player.sendSystemMessage(Component.translatable("message.politicsmod.city.secede_name_taken", cityName).withStyle(ChatFormatting.RED)); return 0;
             }
             boolean ok = mgr.secede(countryName, cityName);
             if (ok) {
+                net.krona.politicsmod.realm.Realm.onSecession(mgr, country);
                 mgr.postNews("news.politicsmod.secession", List.of(countryName, cityName), cityName, countryName);
                 net.krona.politicsmod.network.SyncFlagsPayload.broadcast(mgr);
                 MinecraftServer srv = GameInstance.getServer();

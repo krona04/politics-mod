@@ -12,6 +12,8 @@ import net.krona.politicsmod.politics.NewsEntry;
 import net.krona.politicsmod.politics.MarketListing;
 import net.krona.politicsmod.politics.Plot;
 import net.krona.politicsmod.protection.ProtectionFlag;
+import net.krona.politicsmod.realm.ModifierType;
+import net.krona.politicsmod.realm.Realm;
 import net.krona.politicsmod.economy.Wallet;
 import net.krona.politicsmod.economy.WalletService;
 import net.minecraft.core.BlockPos;
@@ -54,15 +56,25 @@ public class PoliticsManager extends SavedData {
     private final List<NewsEntry>                           news         = new ArrayList<>();
     private final List<Loan>                                loans        = new ArrayList<>();
 
+    /** Chunks that are not yet cores of their owner, with the economy cycle they were taken in. */
+    private final Map<ChunkPos, Long>                       nonCore      = new HashMap<>();
+    /** Chunks each country lost while they were its cores; taking one back makes it a core at once. */
+    private final Map<String, Set<ChunkPos>>                lostCores    = new HashMap<>();
+    /** Economy cycles run in this world since 0.5. */
+    private long                                            cycleCount   = 0;
+    /** Daily samples for the Ledger tab, oldest first; the layout is in net.krona.politicsmod.realm.Realm. */
+    private final Map<String, List<int[]>>                  history      = new HashMap<>();
+
     /** Bumped whenever a chunk changes hands; web maps redraw when it changes. Not saved. */
     private int territoryVersion = 0;
 
     /**
      * Version of the saved data layout. Bump it when a change needs migrating old worlds.
      * 1 = up to 0.3 (not written), 2 = 0.4 (wallets, salaries, plots, protection flags),
-     * 3 = 0.4 (news, loans, laws, elections).
+     * 3 = 0.4 (news, loans, laws, elections), 4 = 0.5 (cores, cycle count, ledger history; land from
+     * older worlds counts as core).
      */
-    public static final int FORMAT_VERSION = 3;
+    public static final int FORMAT_VERSION = 4;
 
     public PoliticsManager() {}
 
@@ -196,6 +208,32 @@ public class PoliticsManager extends SavedData {
 
         tag.put("settlements", settlementData.save());
 
+        tag.putLong("cycleCount", cycleCount);
+        ListTag nonCoreList = new ListTag();
+        for (Map.Entry<ChunkPos, Long> e : nonCore.entrySet()) {
+            CompoundTag t = new CompoundTag();
+            t.putLong("pos", e.getKey().toLong());
+            t.putLong("since", e.getValue());
+            nonCoreList.add(t);
+        }
+        tag.put("nonCore", nonCoreList);
+        CompoundTag lostTag = new CompoundTag();
+        for (Map.Entry<String, Set<ChunkPos>> e : lostCores.entrySet()) {
+            if (e.getValue().isEmpty()) continue;
+            long[] positions = new long[e.getValue().size()];
+            int i = 0;
+            for (ChunkPos p : e.getValue()) positions[i++] = p.toLong();
+            lostTag.putLongArray(e.getKey(), positions);
+        }
+        tag.put("lostCores", lostTag);
+        CompoundTag historyTag = new CompoundTag();
+        for (Map.Entry<String, List<int[]>> e : history.entrySet()) {
+            ListTag samples = new ListTag();
+            for (int[] s : e.getValue()) samples.add(new net.minecraft.nbt.IntArrayTag(s));
+            historyTag.put(e.getKey(), samples);
+        }
+        tag.put("history", historyTag);
+
         return tag;
     }
 
@@ -262,7 +300,107 @@ public class PoliticsManager extends SavedData {
         ListTag loanList = tag.getList("loans", Tag.TAG_COMPOUND);
         for (int i = 0; i < loanList.size(); i++) m.loans.add(Loan.load(loanList.getCompound(i)));
         m.settlementData = net.krona.politicsmod.integration.settlement.SettlementData.load(tag.getCompound("settlements"));
+
+        // Worlds from before 0.5 have none of these: all their land counts as core
+        m.cycleCount = tag.getLong("cycleCount");
+        ListTag nonCoreList = tag.getList("nonCore", Tag.TAG_COMPOUND);
+        for (int i = 0; i < nonCoreList.size(); i++) {
+            CompoundTag t = nonCoreList.getCompound(i);
+            ChunkPos pos = new ChunkPos(t.getLong("pos"));
+            if (m.chunkOwners.containsKey(pos)) m.nonCore.put(pos, t.getLong("since"));
+        }
+        CompoundTag lostTag = tag.getCompound("lostCores");
+        for (String country : lostTag.getAllKeys()) {
+            if (!m.countries.containsKey(country)) continue;
+            Set<ChunkPos> set = new HashSet<>();
+            for (long p : lostTag.getLongArray(country)) set.add(new ChunkPos(p));
+            m.lostCores.put(country, set);
+        }
+        CompoundTag historyTag = tag.getCompound("history");
+        for (String country : historyTag.getAllKeys()) {
+            if (!m.countries.containsKey(country)) continue;
+            List<int[]> samples = new ArrayList<>();
+            ListTag list = historyTag.getList(country, Tag.TAG_INT_ARRAY);
+            for (int i = 0; i < list.size(); i++) samples.add(list.getIntArray(i));
+            m.history.put(country, samples);
+        }
         return m;
+    }
+
+    // ── CORES ────────────────────────────────────────────────────────────
+
+    public long getCycleCount() { return cycleCount; }
+
+    /**
+     * True for a claimed chunk its owner has held long enough (or founded on, or took back). Cores are tracked
+     * even with the realm layer off; only their effects are switched off.
+     */
+    public boolean isCore(ChunkPos pos) {
+        return chunkOwners.containsKey(pos) && !nonCore.containsKey(pos);
+    }
+
+    /** Economy cycles until a chunk becomes a core; 0 for cores and unclaimed land. */
+    public int coreCyclesLeft(ChunkPos pos) {
+        Long since = nonCore.get(pos);
+        if (since == null) return 0;
+        return (int) Math.max(1, since + PoliticsConfig.get().coreCycles - cycleCount);
+    }
+
+    /** Non-core chunks of every country with the cycles they still need. */
+    public Map<ChunkPos, Long> getNonCore() { return Collections.unmodifiableMap(nonCore); }
+
+    public Set<ChunkPos> getLostCores(String country) {
+        return Collections.unmodifiableSet(lostCores.getOrDefault(country, Set.of()));
+    }
+
+    /**
+     * Counts one economy cycle and turns chunks held long enough into cores. Returns how many became cores,
+     * by country.
+     */
+    public Map<String, Integer> advanceCycle() {
+        cycleCount++;
+        Map<String, Integer> matured = new HashMap<>();
+        int needed = PoliticsConfig.get().coreCycles;
+        for (java.util.Iterator<Map.Entry<ChunkPos, Long>> it = nonCore.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<ChunkPos, Long> e = it.next();
+            String owner = chunkOwners.get(e.getKey());
+            if (owner == null) { it.remove(); continue; }
+            if (cycleCount - e.getValue() >= needed) {
+                it.remove();
+                matured.merge(owner, 1, Integer::sum);
+            }
+        }
+        setDirty();
+        return matured;
+    }
+
+    /**
+     * Keeps cores right when a chunk changes hands: the old owner remembers it if it was a core; the new owner gets
+     * a core at once when it founds there, inherits a core (a seceding city) or takes back its own lost core.
+     */
+    private void ownerChanged(ChunkPos pos, String oldOwner, String newOwner, boolean core) {
+        boolean wasCore = oldOwner != null && !nonCore.containsKey(pos);
+        if (wasCore) lostCores.computeIfAbsent(oldOwner, k -> new HashSet<>()).add(pos);
+        nonCore.remove(pos);
+        if (newOwner == null) return;
+        Set<ChunkPos> lost = lostCores.get(newOwner);
+        boolean reclaimed = lost != null && lost.remove(pos);
+        if (!core && !reclaimed) nonCore.put(pos, cycleCount);
+    }
+
+    // ── LEDGER HISTORY ───────────────────────────────────────────────────
+
+    public List<int[]> getHistory(String country) {
+        return Collections.unmodifiableList(history.getOrDefault(country, List.of()));
+    }
+
+    /** Adds one daily sample and drops the oldest beyond the configured length. */
+    public void addHistory(String country, int[] sample) {
+        List<int[]> list = history.computeIfAbsent(country, k -> new ArrayList<>());
+        list.add(sample);
+        int max = PoliticsConfig.get().ledgerHistoryDays;
+        while (list.size() > max) list.remove(0);
+        setDirty();
     }
 
     public void saveData() { this.setDirty(); }
@@ -544,6 +682,8 @@ public class PoliticsManager extends SavedData {
             old.radarBlocks.removeIf(p -> new ChunkPos(BlockPos.of(p)).equals(pos));
             old.vaultBlocks.removeIf(p -> new ChunkPos(BlockPos.of(p)).equals(pos));
         }
+        String oldOwner = chunkOwners.get(pos);
+        if (!newCountry.equals(oldOwner)) ownerChanged(pos, oldOwner, newCountry, false);
         chunkOwners.put(pos, newCountry);
         chunkCity.remove(pos);
         territoryChanged();
@@ -620,18 +760,27 @@ public class PoliticsManager extends SavedData {
 
     // ── CREATION AND CLAIMS ──────────────────────────────────────────────
 
-    private void claimAreaInternal(ChunkPos center, int radius, String country, String city) {
+    private void claimAreaInternal(ChunkPos center, int radius, String country, String city, boolean core) {
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
                 ChunkPos p = new ChunkPos(center.x+x, center.z+z);
-                chunkOwners.put(p, country);
+                String old = chunkOwners.put(p, country);
+                // Adding own land to a city keeps it as it was; new land starts as non-core
+                if (!country.equals(old)) ownerChanged(p, old, country, core);
                 if (city != null && !city.isEmpty()) chunkCity.put(p, city);
                 else chunkCity.remove(p);
             }
         }
     }
+
+    /** Claims land; land new to the country becomes a core after PoliticsConfig.coreCycles. */
     public void claimChunk(ChunkPos c, int r, String country, String city) {
-        claimAreaInternal(c, r, country, city);
+        claimChunk(c, r, country, city, false);
+    }
+
+    /** core = the land is a core at once (the founding area). */
+    public void claimChunk(ChunkPos c, int r, String country, String city, boolean core) {
+        claimAreaInternal(c, r, country, city, core);
         territoryChanged();
         List<ChunkPos> changed = new ArrayList<>();
         for (int x = -r; x <= r; x++) for (int z = -r; z <= r; z++) changed.add(new ChunkPos(c.x + x, c.z + z));
@@ -681,7 +830,7 @@ public class PoliticsManager extends SavedData {
             }
         }
         m.countries.put(name, founded);
-        m.claimChunk(c, 2, name, null);
+        m.claimChunk(c, 2, name, null, true);
         m.postNews("news.politicsmod.country_founded", List.of(name), name, owner.getGameProfile().getName());
         net.krona.politicsmod.network.SyncFlagsPayload.broadcast(m);
         owner.sendSystemMessage(Component.translatable("message.politicsmod.found.country_success", name)
@@ -709,6 +858,7 @@ public class PoliticsManager extends SavedData {
             }
         }
         createCityEntry(cn, cityName);
+        Realm.onCityFounded(country);
         country.cityColors.put(cityName, 0xFFD700);
         country.cityBalances.put(cityName, 0);
         territoryChanged();
@@ -732,17 +882,19 @@ public class PoliticsManager extends SavedData {
             int chunks = 0;
             for (String o : chunkOwners.values()) if (o.equals(country.getName())) chunks++;
 
-            // Tax block income goes to the city treasury inside a city, otherwise to the nation
-            int perBlock = taxBlockIncome(country);
+            // Tax block income goes to the city treasury inside a city, otherwise to the nation.
+            // Modifiers (laws, stability, development, unrest) and non-core land change what each block brings.
+            Realm.TaxRates rates = Realm.taxRates(country, Realm.cities(this, country));
             Map<String, Integer> thisCycleIncome = new HashMap<>();
             for (Long posLong : country.taxBlocks) {
                 ChunkPos cp = new ChunkPos(BlockPos.of(posLong));
+                int income = Realm.taxBlockIncome(this, cp, rates);
                 String city = chunkCity.get(cp);
                 if (city != null && country.cities.contains(city)) {
-                    thisCycleIncome.merge(city, perBlock, Integer::sum);
+                    thisCycleIncome.merge(city, income, Integer::sum);
                 } else {
-                    country.balance += perBlock;
-                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_tax", perBlock);
+                    country.balance += income;
+                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_tax", income);
                 }
             }
 
@@ -759,21 +911,22 @@ public class PoliticsManager extends SavedData {
             // Colonies and villages of citizens pay tax like tax blocks: a city gets it and shares it with the nation
             for (net.krona.politicsmod.integration.settlement.Settlements.Income in
                     : net.krona.politicsmod.integration.settlement.Settlements.incomeOf(level, this, country.getName())) {
+                int amount = Realm.apply(in.amount(), rates.country());
                 String city = chunkCity.get(in.center());
                 if (city != null && country.cities.contains(city)) {
-                    int fedTax = country.federalTaxRate > 0 ? in.amount() * country.federalTaxRate / 100 : 0;
-                    country.cityBalances.merge(city, in.amount() - fedTax, Integer::sum);
+                    int fedTax = country.federalTaxRate > 0 ? amount * country.federalTaxRate / 100 : 0;
+                    country.cityBalances.merge(city, amount - fedTax, Integer::sum);
                     country.balance += fedTax;
                     net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_settlements", fedTax);
                 } else {
-                    country.balance += in.amount();
-                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_settlements", in.amount());
+                    country.balance += amount;
+                    net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_settlements", amount);
                 }
             }
 
             // Territory upkeep: the treasury can go into debt, down to the configured limit
             net.krona.politicsmod.economy.DailyReport.expense(country, "gui.politicsmod.economy.line_upkeep",
-                    charge(country, net.krona.politicsmod.economy.LandPrices.upkeep(chunks)));
+                    charge(country, upkeep(country, chunks)));
         }
 
         // Tribute payments (separate pass)
@@ -840,27 +993,27 @@ public class PoliticsManager extends SavedData {
             boolean now = country.isBankrupt();
             if (now && !country.bankrupt) {
                 postNews("news.politicsmod.bankrupt", List.of(country.getName()), country.getName());
+                Realm.onBankrupt(this, country);
             } else if (!now && country.bankrupt) {
                 postNews("news.politicsmod.recovered", List.of(country.getName()), country.getName());
             }
             country.bankrupt = now;
         }
 
+        // ── Realm: stability, legitimacy, prestige, cores
+        Realm.cycle(this);
+
         setDirty();
     }
 
-    /** Income of one tax block for a country; martial law lowers it. */
-    public static int taxBlockIncome(Country country) {
-        int income = PoliticsConfig.get().incomePerTaxBlock;
-        if (country.hasLaw(Law.MARTIAL_LAW)) income = income * (100 - PoliticsConfig.get().martialLawIncomePenaltyPercent) / 100;
-        return income;
+    /** Income of one active embassy for a country: free trade and prestige raise it. */
+    public static int embassyIncome(Country country) {
+        return Realm.apply(PoliticsConfig.get().embassyIncomeBonus, Realm.percent(country, ModifierType.EMBASSY_INCOME));
     }
 
-    /** Income of one active embassy for a country; free trade raises it. */
-    public static int embassyIncome(Country country) {
-        int income = PoliticsConfig.get().embassyIncomeBonus;
-        if (country.hasLaw(Law.FREE_TRADE)) income = income * (100 + PoliticsConfig.get().freeTradeEmbassyBonusPercent) / 100;
-        return income;
+    /** Upkeep of the country's land per cycle, after modifiers. */
+    public static int upkeep(Country country, int chunks) {
+        return Realm.apply(net.krona.politicsmod.economy.LandPrices.upkeep(chunks), Realm.percent(country, ModifierType.UPKEEP));
     }
 
     // ── SECESSION ────────────────────────────────────────────────────────
@@ -901,11 +1054,13 @@ public class PoliticsManager extends SavedData {
         newCountry.taxBlocks.addAll(transferTax);
         countries.put(cityName, newCountry);
 
-        // Transfer the chunks
+        // Transfer the chunks: the city's cores are the new country's homeland and the old one's lost cores
         for (ChunkPos pos : cityChunks) {
+            ownerChanged(pos, oldCountryName, cityName, isCore(pos));
             chunkOwners.put(pos, cityName);
             chunkCity.remove(pos);
         }
+        old.cityDevelopment.remove(cityName);
         territoryChanged();
         syncChunksToAll(cityChunks);
 
@@ -940,8 +1095,10 @@ public class PoliticsManager extends SavedData {
         for (Map.Entry<ChunkPos, String> e : chunkOwners.entrySet())
             if (e.getValue().equals(name)) toRemove.add(e.getKey());
         for (ChunkPos pos : toRemove) {
-            chunkOwners.remove(pos); chunkCity.remove(pos);
+            chunkOwners.remove(pos); chunkCity.remove(pos); nonCore.remove(pos);
         }
+        lostCores.remove(name);
+        history.remove(name);
         territoryChanged();
         syncChunksToAll(toRemove);
         loans.removeIf(l -> l.lender.equals(name) || l.borrower.equals(name));

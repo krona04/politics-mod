@@ -5,6 +5,9 @@ import net.krona.politicsmod.client.ui.FlatButton;
 import net.krona.politicsmod.client.ui.UiKit;
 import net.krona.politicsmod.network.CountryDetailsPayload;
 import net.krona.politicsmod.politics.EconomySummary;
+import net.krona.politicsmod.realm.Breakdown;
+import net.krona.politicsmod.realm.ModifierType;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
@@ -99,11 +102,14 @@ public class EconomyTab extends DashboardTab {
         UiKit.text(g, font, Component.translatable("gui.politicsmod.economy.vaults", e.vaults()), x + 5, ly, lw - 10, UiKit.TEXT_MUTED);
         ly += 13;
 
-        ly = money(g, ly, "gui.politicsmod.economy.line_tax", e.directIncome(), true);
-        ly = money(g, ly, "gui.politicsmod.economy.line_federal", e.federalTaxIncome(), true);
-        ly = money(g, ly, "gui.politicsmod.economy.line_embassies", e.embassyIncome(), true);
-        if (e.settlementIncome() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_settlements", e.settlementIncome(), true);
-        ly = money(g, ly, "gui.politicsmod.economy.line_upkeep", e.upkeep(), false);
+        List<Component> taxTip = taxTip(d);
+        ly = money(g, ly, "gui.politicsmod.economy.line_tax", e.directIncome(), true, taxTip);
+        ly = money(g, ly, "gui.politicsmod.economy.line_federal", e.federalTaxIncome(), true, taxTip);
+        ly = money(g, ly, "gui.politicsmod.economy.line_embassies", e.embassyIncome(), true,
+                modifierTip(d, ModifierType.EMBASSY_INCOME, true));
+        if (e.settlementIncome() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_settlements", e.settlementIncome(), true,
+                modifierTip(d, ModifierType.TAX_INCOME, true));
+        ly = money(g, ly, "gui.politicsmod.economy.line_upkeep", e.upkeep(), false, modifierTip(d, ModifierType.UPKEEP, false));
         if (e.tributeAmount() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_tribute", e.tributeAmount(), false);
         if (e.salaryCost() > 0) {
             ly = money(g, ly, "gui.politicsmod.economy.line_salaries", e.salaryCost(), false);
@@ -130,6 +136,37 @@ public class EconomyTab extends DashboardTab {
     private int money(GuiGraphics g, int ly, String key, int amount, boolean income) {
         return line(g, ly, Component.translatable(key), Component.literal((income ? "+" : "−") + amount + "$"),
                 income ? UiKit.GOOD : UiKit.BAD, UiKit.TEXT_DIM);
+    }
+
+    /** A money line that explains its modifiers on hover. */
+    private int money(GuiGraphics g, int ly, String key, int amount, boolean income, List<Component> tip) {
+        hover(x + 1, ly - 1, lw - 2, 10, tip);
+        return money(g, ly, key, amount, income);
+    }
+
+    /** "Modifiers: +5%" and one line per part; nothing when the realm is off and no law or event applies. */
+    private static List<Component> modifierTip(CountryDetailsPayload d, ModifierType type, boolean goodIsPositive) {
+        Breakdown b = d.realm().modifier(type);
+        List<Component> lines = new ArrayList<>();
+        if (b.isEmpty()) return lines;
+        lines.add(Component.translatable("gui.politicsmod.economy.modifiers", Breakdown.format(b.total(), 1) + "%")
+                .withStyle(ChatFormatting.GOLD));
+        lines.addAll(b.lines("%", 1, goodIsPositive));
+        return lines;
+    }
+
+    /** Tax modifiers, plus what non-core land and the cities' own development and unrest change. */
+    private static List<Component> taxTip(CountryDetailsPayload d) {
+        List<Component> lines = modifierTip(d, ModifierType.TAX_INCOME, true);
+        if (!d.realm().enabled()) return lines;
+        if (d.economy().nonCoreLoss() > 0) {
+            lines.add(Component.translatable("gui.politicsmod.economy.non_core_loss", d.economy().nonCoreLoss(),
+                    d.realm().nonCoreTaxPercent()).withStyle(ChatFormatting.RED));
+        }
+        if (!d.cities().isEmpty()) {
+            lines.add(Component.translatable("gui.politicsmod.economy.city_tax_note").withStyle(ChatFormatting.DARK_GRAY));
+        }
+        return lines;
     }
 
     /** A label on the left and a value on the right; the label gets whatever room the value leaves. */

@@ -50,6 +50,24 @@ public class Country {
     /** Set by the economy cycle, so going bankrupt and recovering are announced once. */
     public boolean bankrupt = false;
 
+    // Realm (0.5): how stable, recognised and respected the country is
+    /** −3…+3. */
+    public int stability = net.krona.politicsmod.config.PoliticsConfig.get().startingStability;
+    /** Points toward the next stability level up (positive) or down (negative). */
+    public int stabilityProgress = 0;
+    /** 0–100: how much the citizens accept the leader. */
+    public float legitimacy = 50f;
+    /** −100…100: the weight of the country in the world. */
+    public float prestige = 0f;
+    /** Development levels bought for each city. */
+    public final Map<String, Integer> cityDevelopment = new HashMap<>();
+    /** Modifiers stored for a while (lost wars, server events). */
+    public final List<net.krona.politicsmod.realm.TimedModifier> modifiers = new ArrayList<>();
+    /** When the leader last restored order (ms). */
+    public long stabilizedAt = 0L;
+    /** Cities already announced as close to rebellion; not saved, so a restart may announce them again. */
+    public final java.util.Set<String> restlessCities = new java.util.HashSet<>();
+
     // Infrastructure blocks
     public final List<Long>           embassyBlocks = new ArrayList<>();
     public final java.util.Map<Long, String> embassyLinks  = new java.util.HashMap<>();
@@ -195,6 +213,19 @@ public class Country {
         tag.putLong("lastElectionAt", lastElectionAt);
         tag.putBoolean("bankrupt", bankrupt);
 
+        // Realm
+        tag.putInt("stability", stability);
+        tag.putInt("stabilityProgress", stabilityProgress);
+        tag.putFloat("legitimacy", legitimacy);
+        tag.putFloat("prestige", prestige);
+        tag.putLong("stabilizedAt", stabilizedAt);
+        CompoundTag devTag = new CompoundTag();
+        for (Map.Entry<String, Integer> e : cityDevelopment.entrySet()) devTag.putInt(e.getKey(), e.getValue());
+        tag.put("cityDevelopment", devTag);
+        ListTag modifierList = new ListTag();
+        for (net.krona.politicsmod.realm.TimedModifier m : modifiers) modifierList.add(m.save());
+        tag.put("modifiers", modifierList);
+
         // Protection flags
         tag.put("flags", saveFlags(flags));
         CompoundTag cityFlagTag = new CompoundTag();
@@ -290,6 +321,22 @@ public class Country {
         }
         country.lastElectionAt = tag.getLong("lastElectionAt");
         country.bankrupt = tag.getBoolean("bankrupt");
+
+        // Realm: countries from before 0.5 start where a new one would
+        if (tag.contains("stability")) {
+            country.stability = Math.max(-3, Math.min(3, tag.getInt("stability")));
+            country.stabilityProgress = tag.getInt("stabilityProgress");
+            country.legitimacy = tag.getFloat("legitimacy");
+            country.prestige = tag.getFloat("prestige");
+            country.stabilizedAt = tag.getLong("stabilizedAt");
+        }
+        CompoundTag devTag = tag.getCompound("cityDevelopment");
+        for (String city : devTag.getAllKeys()) country.cityDevelopment.put(city, devTag.getInt(city));
+        ListTag modifierList = tag.getList("modifiers", Tag.TAG_COMPOUND);
+        for (int i = 0; i < modifierList.size(); i++) {
+            net.krona.politicsmod.realm.TimedModifier m = net.krona.politicsmod.realm.TimedModifier.load(modifierList.getCompound(i));
+            if (m != null) country.modifiers.add(m);
+        }
 
         loadFlags(tag.getCompound("flags"), country.flags);
         CompoundTag cityFlagTag = tag.getCompound("cityFlags");

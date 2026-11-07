@@ -70,6 +70,7 @@ public final class ElectionService {
         UUID winner = e.winner(incumbent);
         if (winner == null) {
             mgr.postNews("news.politicsmod.election_no_candidates", List.of(country.getName()), country.getName());
+            if (e.type == Election.Type.LEADER) net.krona.politicsmod.realm.Realm.onElectionWithoutCandidates(country);
             Notify.members(country, Component.translatable("message.politicsmod.election.no_candidates").withStyle(ChatFormatting.YELLOW));
             return;
         }
@@ -77,6 +78,9 @@ public final class ElectionService {
         String votes = String.valueOf(e.votesFor(winner));
 
         if (e.type == Election.Type.LEADER) {
+            // Legitimacy follows the share of the vote; a re-elected leader keeps what they had and gains a little
+            net.krona.politicsmod.realm.Realm.onLeaderElected(country, e.votesFor(winner) / (float) Math.max(1, e.votes.size()),
+                    winner.equals(incumbent));
             if (!winner.equals(incumbent)) {
                 if (incumbent != null) {
                     boolean mayor = country.cityMayors.containsValue(incumbent);

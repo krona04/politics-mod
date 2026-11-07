@@ -141,4 +141,39 @@ public final class UiKit {
     public static int money(int amount) {
         return amount < 0 ? BAD : GOOD;
     }
+
+    /** "+3", "−2", "0". */
+    public static String signed(int value) {
+        return value > 0 ? "+" + value : value < 0 ? "−" + (-value) : "0";
+    }
+
+    /** Green at 0, through yellow, to red at 1. */
+    public static int heat(float t) {
+        t = Math.max(0, Math.min(1, t));
+        int r, g;
+        if (t < 0.5f) {
+            r = (int) (0x5B + (0xE8 - 0x5B) * t * 2);
+            g = (int) (0xD1 + (0xB8 - 0xD1) * t * 2);
+        } else {
+            r = (int) (0xE8 + (0xE0 - 0xE8) * (t - 0.5f) * 2);
+            g = (int) (0xB8 + (0x56 - 0xB8) * (t - 0.5f) * 2);
+        }
+        int b = (int) (0x6B + (0x4A - 0x6B) * t);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    /** Colour of a stability level: red at −3, yellow at 0, green at +3. */
+    public static int stability(int level) {
+        return heat((3 - level) / 6f);
+    }
+
+    /** A bar centred on zero: fills right in good colour for positive values, left in bad colour for negative. */
+    public static void centeredBar(GuiGraphics g, int x, int y, int w, int h, float fraction) {
+        g.fill(x, y, x + w, y + h, 0xFF101216);
+        int mid = x + w / 2;
+        int len = Math.round(w / 2f * Math.max(-1, Math.min(1, fraction)));
+        if (len > 0) g.fill(mid, y, mid + len, y + h, GOOD);
+        else if (len < 0) g.fill(mid + len, y, mid, y + h, BAD);
+        g.fill(mid, y - 1, mid + 1, y + h + 1, TEXT_MUTED);
+    }
 }

@@ -5,6 +5,7 @@ import net.krona.politicsmod.client.dashboard.CitizensTab;
 import net.krona.politicsmod.client.dashboard.DashboardTab;
 import net.krona.politicsmod.client.dashboard.DiplomacyTab;
 import net.krona.politicsmod.client.dashboard.EconomyTab;
+import net.krona.politicsmod.client.dashboard.LedgerTab;
 import net.krona.politicsmod.client.dashboard.MapTab;
 import net.krona.politicsmod.client.dashboard.NewsTab;
 import net.krona.politicsmod.client.dashboard.SettlementsTab;
@@ -31,7 +32,7 @@ import java.util.List;
  */
 public class CountryDashboardScreen extends PoliticsScreen {
 
-    private static final String[] TAB_KEYS = {"main", "map", "citizens", "politics", "diplomacy", "economy", "news", "settlements"};
+    private static final String[] TAB_KEYS = {"main", "map", "citizens", "politics", "diplomacy", "economy", "ledger", "news", "settlements"};
     private static final int HEADER = 24;
     /** Ticks to wait after a command before requesting fresh data (commands are not processed instantly). */
     private static final int REFRESH_DELAY_TICKS = 10;
@@ -51,7 +52,14 @@ public class CountryDashboardScreen extends PoliticsScreen {
     private int activeTab;
     private int px, py, pw, ph, sidebar;
     private int refreshInTicks = -1;
-    private static final int SETTLEMENTS_TAB = 7;
+    private static final int SETTLEMENTS_TAB = 8;
+
+    /** Alert icons drawn in the header this frame, for hover and clicks. */
+    private record AlertIcon(int x, net.krona.politicsmod.realm.Alerts.Alert alert) {
+    }
+
+    private static final int ALERT_SIZE = 11;
+    private final java.util.List<AlertIcon> alertIcons = new java.util.ArrayList<>();
     private boolean settlementsShown;
     private int periodic = 0;
 
@@ -64,7 +72,7 @@ public class CountryDashboardScreen extends PoliticsScreen {
         this.playerRole = playerRole;
         this.tabs = new DashboardTab[]{
                 new OverviewTab(this), new MapTab(this), new CitizensTab(this), new PoliticsTab(this),
-                new DiplomacyTab(this), new EconomyTab(this), new NewsTab(this), new SettlementsTab(this)};
+                new DiplomacyTab(this), new EconomyTab(this), new LedgerTab(this), new NewsTab(this), new SettlementsTab(this)};
         this.activeTab = Math.min(lastTab, tabs.length - 1);
     }
 
@@ -214,10 +222,12 @@ public class CountryDashboardScreen extends PoliticsScreen {
         int t = treasury();
         Component treasuryChip = Component.translatable("gui.politicsmod.dashboard.treasury_chip", t);
         if (right - font.width(treasuryChip) - 8 >= left) {
-            UiKit.chip(g, font, treasuryChip, right - font.width(treasuryChip) - 8, py + 6, t < 0 ? UiKit.BAD : UiKit.GOOD);
+            right -= UiKit.chip(g, font, treasuryChip, right - font.width(treasuryChip) - 8, py + 6, t < 0 ? UiKit.BAD : UiKit.GOOD) + 4;
         }
+        renderAlerts(g, left, right);
         g.fill(cx, py + HEADER - 2, px + pw - 8, py + HEADER - 1, UiKit.PANEL_BORDER);
 
+        tabs[activeTab].beginRender();
         tabs[activeTab].render(g, mouseX, mouseY, partialTick);
     }
 
@@ -225,6 +235,72 @@ public class CountryDashboardScreen extends PoliticsScreen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         tabs[activeTab].renderOverlay(g, mouseX, mouseY);
+        tabs[activeTab].renderHover(g, mouseX, mouseY);
+        renderAlertTooltip(g, mouseX, mouseY);
+    }
+
+    // ── Alerts ───────────────────────────────────────────────────────────
+
+    /** Icons for what needs attention, between the title and the money chips; as many as fit. */
+    private void renderAlerts(GuiGraphics g, int left, int right) {
+        alertIcons.clear();
+        CountryDetailsPayload d = ClientPoliticsData.countryDetails;
+        if (d == null) return;
+        int ax = left;
+        for (net.krona.politicsmod.realm.Alerts.Alert a : d.alerts()) {
+            if (ax + ALERT_SIZE > right) break;
+            int color = alertColor(a);
+            int ay = py + 6;
+            g.fill(ax, ay, ax + ALERT_SIZE, ay + ALERT_SIZE, (color & 0x00FFFFFF) | 0x50000000);
+            g.renderOutline(ax, ay, ALERT_SIZE, ALERT_SIZE, color);
+            String glyph = alertGlyph(a.key());
+            g.drawString(font, glyph, ax + (ALERT_SIZE + 1 - font.width(glyph)) / 2, ay + 2, color, false);
+            alertIcons.add(new AlertIcon(ax, a));
+            ax += ALERT_SIZE + 2;
+        }
+    }
+
+    private static int alertColor(net.krona.politicsmod.realm.Alerts.Alert a) {
+        return switch (a.level()) {
+            case net.krona.politicsmod.realm.Alerts.DANGER -> UiKit.BAD;
+            case net.krona.politicsmod.realm.Alerts.WARN -> UiKit.WARN;
+            default -> UiKit.INFO;
+        };
+    }
+
+    private static String alertGlyph(String key) {
+        String name = key.substring(key.lastIndexOf('.') + 1);
+        return switch (name) {
+            case "bankrupt", "treasury_falling", "loan_offer" -> "$";
+            case "siege" -> "⚔";
+            case "stability_falling" -> "▼";
+            case "overextension" -> "◇";
+            case "city_unrest" -> "☹";
+            case "can_stabilize" -> "+";
+            case "vote" -> "✔";
+            case "petition" -> "✎";
+            case "laws_ready" -> "⚖";
+            case "proposal" -> "✉";
+            default -> "!";
+        };
+    }
+
+    private AlertIcon alertAt(double mx, double my) {
+        for (AlertIcon icon : alertIcons) {
+            if (UiKit.inside(mx, my, icon.x, py + 6, ALERT_SIZE, ALERT_SIZE)) return icon;
+        }
+        return null;
+    }
+
+    private void renderAlertTooltip(GuiGraphics g, int mx, int my) {
+        AlertIcon icon = alertAt(mx, my);
+        if (icon == null) return;
+        net.krona.politicsmod.realm.Alerts.Alert a = icon.alert;
+        List<Component> lines = new java.util.ArrayList<>();
+        lines.add(Component.translatable(a.key(), a.args().toArray()).withStyle(st -> st.withColor(net.minecraft.network.chat.TextColor.fromRgb(alertColor(a) & 0xFFFFFF))));
+        lines.add(Component.translatable("gui.politicsmod.alert.open",
+                Component.translatable("gui.politicsmod.dashboard.tab." + TAB_KEYS[a.tab()])).withStyle(ChatFormatting.GRAY));
+        g.renderComponentTooltip(font, lines, mx, my);
     }
 
     public static Component roleName(String role) {
@@ -241,6 +317,11 @@ public class CountryDashboardScreen extends PoliticsScreen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (super.mouseClicked(mx, my, button)) return true;
+        AlertIcon icon = alertAt(mx, my);
+        if (icon != null && icon.alert.tab() >= 0 && icon.alert.tab() < tabs.length) {
+            if (icon.alert.tab() != SETTLEMENTS_TAB || settlementsShown) switchTab(icon.alert.tab());
+            return true;
+        }
         return tabs[activeTab].mouseClicked(mx, my, button);
     }
 

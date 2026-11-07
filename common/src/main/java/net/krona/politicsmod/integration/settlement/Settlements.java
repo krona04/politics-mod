@@ -208,6 +208,7 @@ public final class Settlements {
         data.annexed.put(v.key(), country);
         data.known.put(v.key(), country);
         mgr.postNews("news.politicsmod.settlement.annexed", List.of(country), country, v.name());
+        net.krona.politicsmod.realm.Realm.onSettlementAnnexed(mgr.getCountry(country));
         mgr.setDirty();
         return new Result(true, Component.translatable("message.politicsmod.settlement.annexed", v.name()));
     }

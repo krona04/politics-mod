@@ -49,3 +49,6 @@ crash-reports/
 # --- Local overrides (may contain paths or tokens) ---
 local.properties
 gradle.properties.local
+
+# --- Local tools, not published ---
+tools/

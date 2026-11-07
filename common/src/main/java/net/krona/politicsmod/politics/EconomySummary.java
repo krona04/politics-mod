@@ -3,8 +3,12 @@ package net.krona.politicsmod.politics;
 import net.krona.politicsmod.PoliticsManager;
 import net.krona.politicsmod.config.PoliticsConfig;
 import net.krona.politicsmod.economy.WalletService;
+import net.krona.politicsmod.realm.Realm;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Forecast of a country's treasury for one economy cycle.
@@ -32,7 +36,8 @@ public record EconomySummary(
         int loanPayment,      // installments this country pays per cycle
         int loanIncome,       // installments other countries pay this one per cycle
         int debt,             // total still owed on loans
-        int settlementIncome  // nation's share of colony and village tax (MineColonies, Millénaire)
+        int settlementIncome, // nation's share of colony and village tax (MineColonies, Millénaire)
+        int nonCoreLoss       // tax blocks on non-core land bring this much less (nation and cities together)
 ) {
     public int income() {
         return directIncome + federalTaxIncome + embassyIncome + settlementIncome;
@@ -51,15 +56,21 @@ public record EconomySummary(
             if (countryName.equals(mgr.getCountryNameAt(pos))) chunks[0]++;
         });
 
-        int perBlock = PoliticsManager.taxBlockIncome(country);
+        Realm.TaxRates rates = Realm.taxRates(country, Realm.cities(mgr, country));
         int direct = 0;
-        int cityGross = 0;
+        int nonCoreLoss = 0;
+        Map<String, Integer> cityGross = new HashMap<>();
         for (Long posLong : country.taxBlocks) {
-            String city = mgr.getCityAt(new ChunkPos(BlockPos.of(posLong)));
-            if (city != null && country.cities.contains(city)) cityGross += perBlock;
-            else direct += perBlock;
+            ChunkPos pos = new ChunkPos(BlockPos.of(posLong));
+            int income = Realm.taxBlockIncome(mgr, pos, rates);
+            nonCoreLoss += Realm.taxBlockIncome(mgr, pos, rates, false) - income;
+            String city = mgr.getCityAt(pos);
+            if (city != null && country.cities.contains(city)) cityGross.merge(city, income, Integer::sum);
+            else direct += income;
         }
-        int federal = country.federalTaxRate > 0 ? cityGross * country.federalTaxRate / 100 : 0;
+        // Rounded per city, as the cycle does
+        int federal = 0;
+        if (country.federalTaxRate > 0) for (int gross : cityGross.values()) federal += gross * country.federalTaxRate / 100;
 
         int active = 0;
         for (String partner : country.embassyLinks.values()) {
@@ -84,9 +95,10 @@ public record EconomySummary(
         int settlements = 0;
         for (net.krona.politicsmod.integration.settlement.Settlements.Income in
                 : net.krona.politicsmod.integration.settlement.Settlements.incomeOf(mgr.overworld(), mgr, countryName)) {
+            int amount = Realm.apply(in.amount(), rates.country());
             String city = mgr.getCityAt(in.center());
             boolean inCity = city != null && country.cities.contains(city);
-            settlements += inCity ? (country.federalTaxRate > 0 ? in.amount() * country.federalTaxRate / 100 : 0) : in.amount();
+            settlements += inCity ? (country.federalTaxRate > 0 ? amount * country.federalTaxRate / 100 : 0) : amount;
         }
 
         int salaryCost = 0;
@@ -103,7 +115,7 @@ public record EconomySummary(
                 direct,
                 federal,
                 active * PoliticsManager.embassyIncome(country),
-                net.krona.politicsmod.economy.LandPrices.upkeep(chunks[0]),
+                PoliticsManager.upkeep(country, chunks[0]),
                 tributeTo,
                 tributeAmount,
                 country.vaultBlocks.size(),
@@ -116,6 +128,7 @@ public record EconomySummary(
                 loanPayment,
                 loanIncome,
                 mgr.getDebt(countryName),
-                settlements);
+                settlements,
+                nonCoreLoss);
     }
 }

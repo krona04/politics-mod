@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 public final class GeneralCommands {
 
     /** Help lines, in the order shown: gui.politicsmod.help.&lt;key&gt;. */
-    private static final String[] HELP = {"dashboard", "info", "wallet", "salary", "claim", "plot", "flag",
+    private static final String[] HELP = {"dashboard", "info", "realm", "wallet", "salary", "claim", "plot", "flag",
             "diplomacy", "election", "law", "siege", "loan", "news", "settlement", "market", "exchange", "delete", "guide"};
 
     private GeneralCommands() {

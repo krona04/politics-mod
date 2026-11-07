@@ -6,7 +6,7 @@
 
 > ⚠️ **EARLY DEVELOPMENT WARNING**
 >
-> This mod is currently in **Early Access (v0.4)**. Features are subject to change and bugs may occur.
+> This mod is currently in **Early Access (v0.5)**. Features are subject to change and bugs may occur.
 >
 > * **Loaders:** NeoForge, Forge (1.20.1) & Fabric
 > * **Minecraft Version:** 1.21.1 & 1.20.1
@@ -23,6 +23,8 @@
 
 **PoliticsMod** brings a full political and economic simulation layer to Minecraft. Unlike simple land-claim mods, PoliticsMod models the inner life of a nation — founding a capital, governing cities, managing a treasury, trading with other nations, conducting diplomacy, and watching your borders.
 
+Inspired by the grand strategy games of Paradox and by Tropico, a country is more than money and land: it has stability, legitimacy and prestige, its cities have development and unrest, and every number in the menu explains where it comes from.
+
 Whether you are running a small kingdom or a massive empire on an RP server, this mod gives you the tools to secure territory, manage citizens, and simulate a living country.
 
 ---
@@ -32,9 +34,19 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 ### 🏳️ State Management
 - **Found Your Nation** — Craft and place the **Founding Stone**, right-click it, and enter your country name. The 5×5 chunks around it must be unclaimed. One nation per player.
 - **Dissolve** — `/politicsmod delete`, then `/politicsmod confirm` within 30 seconds.
-- **Dashboard** — Press `K` to open the management screen with five tabs: **Overview**, **Map**, **Citizens**, **Diplomacy** and **Economy**.
+- **Dashboard** — Press `K` to open the management screen: **Overview**, **Map**, **Citizens**, **Politics**, **Diplomacy**, **Economy**, **Ledger**, **News** (and **Settlements** with MineColonies or Millénaire).
 - **Custom Flag** — The leader pastes a direct PNG link on the Overview tab; the flag is shown in the dashboard.
 - **Roles** — **Leader**, **Mayor**, **Citizen**. Leaders appoint mayors from the Citizens tab or with `/politicsmod setrole`.
+
+### ⚖️ The Realm
+- **Stability (−3…+3)** — Peace, no debts and calm cities raise it; war, bankruptcy, too much new land and a high federal tax lower it. Each level changes tax income; at −3 mayors may secede. The leader can restore order for money.
+- **Legitimacy** — Grows with time in power and with the share of the vote at leader elections; petitions and disorder erode it.
+- **Prestige** — Won sieges and wars, new cities and annexed villages raise it; it raises embassy income and lowers land prices.
+- **Cities as provinces** — Each city has **development** (bought from a treasury, plus its tax blocks) and **unrest**. A city in revolt may break away.
+- **Cores** — New land becomes a core after 80 cycles; until then it brings half the tax. Lost cores are remembered.
+- **Modifiers** — Every bonus and penalty has a source: hover any number on the dashboard to see its parts.
+- **Map modes, Ledger and alerts** — Color the map by relations, countries, income, stability, unrest or cores; compare all countries and their history on the **Ledger** tab; icons in the dashboard header show what needs attention.
+- Server owners can switch the whole layer off with `realmEnabled: false`.
 
 ### 🏙️ Cities & Territory
 - **City Stones** — Place a City Stone to found a city within your territory.
@@ -188,6 +200,8 @@ Most actions are also available in the dashboard (`K`).
 
 | Command | Who | Description |
 |---|---|---|
+| `/politicsmod realm` | Member | Stability, legitimacy, prestige, cores and cities, with reasons on hover |
+| `/politicsmod realm stabilize` | Leader | Spend treasury money to restore order |
 | `/politicsmod election` | Member | Current election and petition |
 | `/politicsmod election start leader` / `start mayor <city>` | Leader | Call an election |
 | `/politicsmod election run` / `vote <name>` | Member | Stand as a candidate / vote |
@@ -218,7 +232,8 @@ Flags: `pvp`, `explosions`, `mob_explosions`, `fire_spread`, `item_pickup`, `ent
 | `/politicsmod tax info` | Member | Tax overview |
 | `/politicsmod city setmayor <city> <player>` | Leader | Appoint a city mayor |
 | `/politicsmod city info [city]` | Member | City treasury and mayor |
-| `/politicsmod city secede` | Mayor | Declare your city independent (needs a high federal tax) |
+| `/politicsmod city develop <city>` | Leader / city mayor | Buy the next development level of a city |
+| `/politicsmod city secede` | Mayor | Declare your city independent (high federal tax, bankruptcy, stability −3 or a city in revolt) |
 
 ### Diplomacy
 
@@ -254,6 +269,8 @@ Flags: `pvp`, `explosions`, `mob_explosions`, `fire_spread`, `item_pickup`, `ent
 | `/politicsmod borders style` | Anyone | Switch border style |
 | `/politicsmod reload` | Operator | Reload `config/politicsmod.json` |
 | `/politicsmod wallet give` / `take <player> <amount>` | Operator | Adjust a wallet |
+| `/politicsmod modifier add <type> <percent> <minutes> "<name>" <country>` | Operator | Timed modifier for a server event (`tax_income`, `embassy_income`, `upkeep`, `land_price`, `siege_defense`; 0 minutes = until removed) |
+| `/politicsmod modifier list <country>` / `remove <id> <country>` | Operator | Stored modifiers of a country |
 
 ### Permissions
 
@@ -308,26 +325,15 @@ Every block can be crafted and drops when broken with the right tool. The **Poli
 
 ## 🌍 Localization
 
-Fully localized in sixteen languages — all in-game messages, HUD and GUI labels follow the player's language setting:
+Fully localized in twenty languages — all in-game messages, HUD and GUI labels follow the player's language setting:
 
-| Language | Code |
-|---|---|
-| English | `en_us` |
-| Russian | `ru_ru` |
-| Ukrainian | `uk_ua` |
-| Polish | `pl_pl` |
-| German | `de_de` |
-| French | `fr_fr` |
-| Spanish | `es_es` |
-| Portuguese (Brazil) | `pt_br` |
-| Portuguese (Portugal) | `pt_pt` |
-| Italian | `it_it` |
-| Chinese (Simplified) | `zh_cn` |
-| Japanese | `ja_jp` |
-| Korean | `ko_kr` |
-| Chinese (Traditional) | `zh_tw` |
-| Turkish | `tr_tr` |
-| Dutch | `nl_nl` |
+| | | | |
+|---|---|---|---|
+| English `en_us` | Russian `ru_ru` | Ukrainian `uk_ua` | Polish `pl_pl` |
+| German `de_de` | French `fr_fr` | Spanish `es_es` | Portuguese (Brazil) `pt_br` |
+| Portuguese (Portugal) `pt_pt` | Italian `it_it` | Chinese (Simplified) `zh_cn` | Japanese `ja_jp` |
+| Korean `ko_kr` | Chinese (Traditional) `zh_tw` | Turkish `tr_tr` | Dutch `nl_nl` |
+| Czech `cs_cz` | Swedish `sv_se` | Vietnamese `vi_vn` | Indonesian `id_id` |
 
 ---
 
