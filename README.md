@@ -351,8 +351,6 @@ Every block can be crafted and drops when broken with the right tool. The **Poli
 
 ## 🌍 Localization
 
-Fully localized in twenty languages — all in-game messages, HUD and GUI labels follow the player's language setting:
-
 | | | | |
 |---|---|---|---|
 | English `en_us` | Russian `ru_ru` | Ukrainian `uk_ua` | Polish `pl_pl` |
