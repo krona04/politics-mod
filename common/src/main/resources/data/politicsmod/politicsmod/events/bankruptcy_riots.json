@@ -1,0 +1,34 @@
+{
+  "mean_time": 60,
+  "conditions": [
+    {
+      "type": "bankrupt"
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "wallets",
+          "amount": -50
+        },
+        {
+          "type": "stability",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": -20
+        },
+        {
+          "type": "legitimacy",
+          "amount": -5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "order": 50,
+  "conditions": [
+    {
+      "type": "development",
+      "min": 15
+    }
+  ],
+  "reward": [
+    {
+      "type": "treasury",
+      "amount": 2000
+    }
+  ]
+}

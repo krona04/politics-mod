@@ -2,7 +2,7 @@ package net.krona.politicsmod.realm;
 
 import java.util.Locale;
 
-/** What a modifier changes. Every value is a percentage added to 100%. */
+/** What a modifier changes. Every value but UNREST is a percentage added to 100%. */
 public enum ModifierType {
     /** Income of tax blocks, colonies and villages. */
     TAX_INCOME,
@@ -13,7 +13,9 @@ public enum ModifierType {
     /** Price of new country chunks. */
     LAND_PRICE,
     /** How long enemies must hold a chunk of the country to capture it. */
-    SIEGE_DEFENSE;
+    SIEGE_DEFENSE,
+    /** Unrest of every city (0.5.1). Unlike the others, in unrest points, not percent. */
+    UNREST;
 
     public String key() {
         return name().toLowerCase(Locale.ROOT);

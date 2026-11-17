@@ -1,0 +1,15 @@
+{
+  "order": 20,
+  "conditions": [
+    {
+      "type": "citizens",
+      "min": 5
+    }
+  ],
+  "reward": [
+    {
+      "type": "stability",
+      "amount": 20
+    }
+  ]
+}

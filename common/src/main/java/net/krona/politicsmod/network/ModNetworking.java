@@ -39,6 +39,7 @@ public final class ModNetworking {
         s2c(MarketDataPayload.TYPE, MarketDataPayload.CODEC, MarketDataPayload::handle);
         s2c(BorderSettingsPayload.TYPE, BorderSettingsPayload.CODEC, BorderSettingsPayload::handle);
         s2c(SyncFlagsPayload.TYPE, SyncFlagsPayload.CODEC, SyncFlagsPayload::handle);
+        s2c(EventNoticePayload.TYPE, EventNoticePayload.CODEC, EventNoticePayload::handle);
 
         // ---- Client -> Server ----
         NetworkManager.registerReceiver(NetworkManager.Side.C2S,

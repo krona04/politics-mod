@@ -263,7 +263,9 @@ public class OverviewTab extends DashboardTab {
                     ? Component.literal("◆" + c.development())
                     : Component.translatable("gui.politicsmod.overview.chunks_value", c.chunks());
             int kw = font.width(right) + (realm ? barW + 4 : 0);
-            Component mayor = Component.literal("♛ " + (c.mayor().isEmpty() ? "—" : c.mayor()));
+            // A villager mayor is marked with a house; villagers living in the city follow the mayor
+            Component mayor = Component.literal((c.mayorProgram().isEmpty() ? "♛ " : "⌂ ") + (c.mayor().isEmpty() ? "—" : c.mayor())
+                    + (c.villagers() > 0 ? "  ☺" + c.villagers() : ""));
             UiKit.text(g, font, mayor, cx + 5, ry + 12, cw - kw - 14, UiKit.TEXT_DIM);
             if (realm) {
                 float t = c.unrestValue() / (float) Math.max(1, d.realm().unrestSecede());
@@ -272,13 +274,20 @@ public class OverviewTab extends DashboardTab {
             } else {
                 UiKit.textRight(g, font, right, cx + cw - 5, ry + 12, UiKit.TEXT_MUTED);
             }
-            if (realm) hover(cx, ry, cw, CITY_ROW, cityTooltip(d, c));
+            hover(cx, ry, cw, CITY_ROW, cityTooltip(d, c));
         }
     }
 
     private List<Component> cityTooltip(CountryDetailsPayload d, CountryDetailsPayload.City c) {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.literal(c.name()).withStyle(ChatFormatting.GOLD));
+        if (!c.mayorProgram().isEmpty()) {
+            lines.add(Component.translatable("gui.politicsmod.realm.city_villager_mayor", c.mayor(),
+                    Component.translatable("villager.politicsmod.program." + c.mayorProgram())).withStyle(ChatFormatting.AQUA));
+            lines.add(Component.translatable("villager.politicsmod.program." + c.mayorProgram() + ".desc").withStyle(ChatFormatting.GRAY));
+        }
+        if (c.villagers() > 0) lines.add(Component.translatable("gui.politicsmod.realm.city_villagers", c.villagers()).withStyle(ChatFormatting.GRAY));
+        if (!d.realm().enabled()) return lines;
         lines.add(Component.translatable("gui.politicsmod.realm.city_chunks", c.chunks(), c.nonCore()).withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("gui.politicsmod.realm.city_development", c.development(), c.boughtDevelopment(),
                 c.development() - c.boughtDevelopment()).withStyle(ChatFormatting.GRAY));

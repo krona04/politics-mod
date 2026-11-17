@@ -1,0 +1,36 @@
+{
+  "mean_time": 300,
+  "cooldown": 400,
+  "conditions": [
+    {
+      "type": "stability",
+      "min": 3
+    },
+    {
+      "type": "legitimacy",
+      "min": 80
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "prestige",
+          "amount": 5
+        },
+        {
+          "type": "legitimacy",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "development",
+          "amount": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "order": 50,
+  "cost": 1500,
+  "conditions": [
+    {
+      "type": "stability",
+      "max": 2
+    }
+  ],
+  "cooldown": 120,
+  "effects": [
+    {
+      "type": "stability",
+      "amount": 30
+    },
+    {
+      "type": "legitimacy",
+      "amount": 5
+    }
+  ]
+}

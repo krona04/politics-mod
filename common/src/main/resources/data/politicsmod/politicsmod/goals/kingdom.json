@@ -1,0 +1,15 @@
+{
+  "order": 110,
+  "conditions": [
+    {
+      "type": "rank",
+      "min": 1
+    }
+  ],
+  "reward": [
+    {
+      "type": "legitimacy",
+      "amount": 10
+    }
+  ]
+}

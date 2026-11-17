@@ -1,0 +1,18 @@
+{
+  "order": 60,
+  "cost": 2000,
+  "target_city": true,
+  "cooldown": 80,
+  "effects": [
+    {
+      "type": "development",
+      "amount": 1
+    },
+    {
+      "type": "city_modifier",
+      "modifier": "unrest",
+      "value": -10,
+      "cycles": 40
+    }
+  ]
+}

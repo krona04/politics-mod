@@ -1,0 +1,27 @@
+{
+  "mean_time": 140,
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -350
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": -15
+        },
+        {
+          "type": "modifier",
+          "modifier": "unrest",
+          "value": 5,
+          "cycles": 20
+        }
+      ]
+    }
+  ]
+}

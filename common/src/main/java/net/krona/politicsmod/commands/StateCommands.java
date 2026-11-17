@@ -66,7 +66,16 @@ public final class StateCommands {
                             .executes(ctx -> startElection(ctx, Election.Type.MAYOR, StringArgumentType.getString(ctx, "city"))))))
                 .then(Commands.literal("run").executes(StateCommands::runForOffice))
                 .then(Commands.literal("vote")
-                    .then(Commands.argument("candidate", StringArgumentType.word())
+                    // Villager candidates may have names with spaces or any letters: the name takes the rest of the line
+                    .then(Commands.argument("candidate", StringArgumentType.greedyString())
+                        .suggests((ctx, b) -> {
+                            ServerPlayer sp = ctx.getSource().getPlayer();
+                            PoliticsManager m = sp == null ? null : PoliticsManager.get(sp.level());
+                            String cn = m == null ? null : m.getPlayerCountry(sp.getUUID());
+                            Election el = cn == null ? null : m.getCountry(cn).election;
+                            return el == null ? b.buildFuture()
+                                    : net.minecraft.commands.SharedSuggestionProvider.suggest(el.candidates.values(), b);
+                        })
                         .executes(ctx -> vote(ctx, StringArgumentType.getString(ctx, "candidate")))))
                 .then(Commands.literal("petition").executes(StateCommands::signPetition)))
 
@@ -227,8 +236,14 @@ public final class StateCommands {
             }
             for (Map.Entry<UUID, String> cand : e.candidates.entrySet()) {
                 boolean mine = cand.getKey().equals(e.votes.get(p.getUUID()));
-                p.sendSystemMessage(Component.literal((mine ? " ✔ " : " • ") + cand.getValue() + " — " + e.votesFor(cand.getKey()))
-                        .withStyle(mine ? ChatFormatting.GREEN : ChatFormatting.WHITE));
+                net.minecraft.network.chat.MutableComponent line = Component.literal((mine ? " ✔ " : " • ") + cand.getValue() + " — "
+                        + e.votesFor(cand.getKey())).withStyle(mine ? ChatFormatting.GREEN : ChatFormatting.WHITE);
+                net.krona.politicsmod.villagers.MayorProgram program = net.krona.politicsmod.villagers.VillagerCitizens.programOf(e, cand.getKey());
+                if (program != null) {
+                    line.append(Component.literal("  ").append(Component.translatable("gui.politicsmod.politics.villager_program",
+                            Component.translatable(program.nameKey()))).withStyle(ChatFormatting.GRAY));
+                }
+                p.sendSystemMessage(line);
             }
         }
         p.sendSystemMessage(Component.translatable("message.politicsmod.election.petition_status",

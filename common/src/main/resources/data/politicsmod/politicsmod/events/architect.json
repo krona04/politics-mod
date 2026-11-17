@@ -1,0 +1,32 @@
+{
+  "mean_time": 200,
+  "conditions": [
+    {
+      "type": "development",
+      "min": 8
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -1000
+        },
+        {
+          "type": "prestige",
+          "amount": 8
+        }
+      ],
+      "conditions": [
+        {
+          "type": "treasury",
+          "min": 1000
+        }
+      ]
+    },
+    {
+      "effects": []
+    }
+  ]
+}

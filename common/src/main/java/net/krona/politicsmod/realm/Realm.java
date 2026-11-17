@@ -72,12 +72,14 @@ public final class Realm {
                     b.add(c.stability * cfg.stabilityTaxPercent, "realm.politicsmod.source.stability", signed(c.stability));
                     if (c.legitimacy >= 80) b.add(5, "realm.politicsmod.source.legitimacy_high");
                     else if (c.legitimacy < 30) b.add(-10, "realm.politicsmod.source.legitimacy_low");
+                    b.add(5 * c.statecraft.rank, "realm.politicsmod.source.rank", rankKey(c.statecraft.rank));
                 }
             }
             case EMBASSY_INCOME -> {
                 if (c.hasLaw(Law.FREE_TRADE)) b.add(cfg.freeTradeEmbassyBonusPercent, "realm.politicsmod.source.law",
                         NewsEntry.TRANSLATE_PREFIX + Law.FREE_TRADE.nameKey());
                 if (on) b.add(Math.round(c.prestige / 4f), "realm.politicsmod.source.prestige");
+                if (on) b.add(10 * c.statecraft.rank, "realm.politicsmod.source.rank", rankKey(c.statecraft.rank));
             }
             case LAND_PRICE -> {
                 if (on) b.add(-Math.round(c.prestige / 10f), "realm.politicsmod.source.prestige");
@@ -86,7 +88,7 @@ public final class Realm {
                 if (c.hasLaw(Law.MARTIAL_LAW)) b.add((cfg.martialLawSiegeMultiplier - 1) * 100, "realm.politicsmod.source.law",
                         NewsEntry.TRANSLATE_PREFIX + Law.MARTIAL_LAW.nameKey());
             }
-            case UPKEEP -> {
+            case UPKEEP, UNREST -> {
             }
         }
         long now = System.currentTimeMillis();
@@ -94,6 +96,15 @@ public final class Realm {
             if (m.type() == type && !m.expired(now)) b.add(m.value(), "realm.politicsmod.source.named", m.name());
         }
         return b.build();
+    }
+
+    /** "#statecraft.politicsmod.rank.kingdom" — the rank name as a translated argument. */
+    public static String rankKey(int rank) {
+        return NewsEntry.TRANSLATE_PREFIX + "statecraft.politicsmod.rank." + switch (Math.max(0, Math.min(2, rank))) {
+            case 1 -> "kingdom";
+            case 2 -> "empire";
+            default -> "principality";
+        };
     }
 
     public static int percent(Country c, ModifierType type) {
@@ -109,7 +120,7 @@ public final class Realm {
 
     /** What a city is made of right now; unrest is explained part by part. */
     public record CityStats(int chunks, int nonCore, int taxBlocks, int bought, int development, boolean besieged,
-                            Breakdown unrest) {
+                            Breakdown unrest, int villagers, int extraTaxPercent) {
         public int unrestValue() {
             return Math.max(0, Math.min(100, unrest.total()));
         }
@@ -141,13 +152,26 @@ public final class Realm {
             int[] n = counts.getOrDefault(city, new int[3]);
             int bought = c.cityDevelopment.getOrDefault(city, 0);
             int development = bought + Math.min(MAX_PASSIVE_DEVELOPMENT, n[2] / 2);
-            Breakdown unrest = unrest(c, n[0], n[1], development, wars, besieged.contains(city));
-            result.put(city, new CityStats(n[0], n[1], n[2], bought, development, besieged.contains(city), unrest));
+            Breakdown unrest = unrest(c, city, n[0], n[1], development, wars, besieged.contains(city));
+            result.put(city, new CityStats(n[0], n[1], n[2], bought, development, besieged.contains(city), unrest,
+                    c.villagersIn(city), extraTax(c, city)));
         }
         return result;
     }
 
-    private static Breakdown unrest(Country c, int chunks, int nonCore, int development, int wars, boolean besieged) {
+    /** Tax percent a city gets beyond development and unrest: its villager mayor's program and its own modifiers. */
+    private static int extraTax(Country c, String city) {
+        int pct = 0;
+        net.krona.politicsmod.villagers.VillagerMayor vm = c.villagerMayors.get(city);
+        if (vm != null) pct += vm.program().taxPercent;
+        long now = System.currentTimeMillis();
+        for (TimedModifier m : c.cityModifiers.getOrDefault(city, List.of())) {
+            if (m.type() == ModifierType.TAX_INCOME && !m.expired(now)) pct += m.value();
+        }
+        return pct;
+    }
+
+    private static Breakdown unrest(Country c, String city, int chunks, int nonCore, int development, int wars, boolean besieged) {
         if (!enabled()) return Breakdown.EMPTY;
         Breakdown.Builder b = Breakdown.builder();
         if (c.federalTaxRate > 20) b.add((c.federalTaxRate - 20) / 2, "realm.politicsmod.unrest.federal_tax", String.valueOf(c.federalTaxRate));
@@ -162,13 +186,24 @@ public final class Realm {
         if (c.isBankrupt()) b.add(15, "realm.politicsmod.unrest.bankrupt");
         if (c.legitimacy < 30) b.add(10, "realm.politicsmod.unrest.legitimacy");
         if (c.hasLaw(Law.MARTIAL_LAW)) b.add(-10, "realm.politicsmod.unrest.martial_law");
+        net.krona.politicsmod.villagers.VillagerMayor vm = c.villagerMayors.get(city);
+        if (vm != null) b.add(vm.program().unrest, "realm.politicsmod.unrest.program",
+                NewsEntry.TRANSLATE_PREFIX + vm.program().nameKey());
+        long now = System.currentTimeMillis();
+        for (TimedModifier m : c.modifiers) {
+            if (m.type() == ModifierType.UNREST && !m.expired(now)) b.add(m.value(), "realm.politicsmod.source.named", m.name());
+        }
+        for (TimedModifier m : c.cityModifiers.getOrDefault(city, List.of())) {
+            if (m.type() == ModifierType.UNREST && !m.expired(now)) b.add(m.value(), "realm.politicsmod.source.named", m.name());
+        }
         return b.build();
     }
 
     /** Extra tax percent of a city's tax blocks: development raises it, high unrest lowers it. */
     public static int cityTaxPercent(CityStats s) {
-        if (!enabled()) return 0;
-        return s.development() * PoliticsConfig.get().developmentTaxPercent - Math.max(0, s.unrestValue() - UNREST_TAX_START);
+        if (!enabled()) return s.extraTaxPercent();
+        return s.development() * PoliticsConfig.get().developmentTaxPercent - Math.max(0, s.unrestValue() - UNREST_TAX_START)
+                + s.extraTaxPercent();
     }
 
     /** Price of the next development level a city can buy, or -1 at the limit. */
@@ -291,6 +326,8 @@ public final class Realm {
         long now = System.currentTimeMillis();
         for (Country c : mgr.getCountries().values()) {
             c.modifiers.removeIf(m -> m.expired(now));
+            for (List<TimedModifier> mods : c.cityModifiers.values()) mods.removeIf(m -> m.expired(now));
+            c.cityModifiers.values().removeIf(List::isEmpty);
             if (!enabled()) continue;
             Map<String, CityStats> cities = cities(mgr, c);
             c.stabilityProgress += stabilityTrend(mgr, c, cities).total();
@@ -475,7 +512,7 @@ public final class Realm {
             s[H_TREASURY] = c.balance;
             s[H_NET] = (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, netByCountry.getOrDefault(c.getName(), 0L)));
             s[H_CHUNKS] = mgr.getChunksOf(c.getName()).size();
-            s[H_CITIZENS] = c.getMembers().size();
+            s[H_CITIZENS] = c.getMembers().size() + c.villagers.size();
             s[H_STABILITY] = c.stability;
             s[H_LEGITIMACY] = Math.round(c.legitimacy);
             s[H_PRESTIGE] = Math.round(c.prestige);

@@ -1,0 +1,35 @@
+{
+  "mean_time": 100,
+  "conditions": [
+    {
+      "type": "debt",
+      "min": 1
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -300
+        },
+        {
+          "type": "prestige",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "prestige",
+          "amount": -3
+        },
+        {
+          "type": "legitimacy",
+          "amount": -3
+        }
+      ]
+    }
+  ]
+}

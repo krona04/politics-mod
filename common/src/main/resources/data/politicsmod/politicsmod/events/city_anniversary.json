@@ -1,0 +1,29 @@
+{
+  "mean_time": 120,
+  "conditions": [
+    {
+      "type": "cities",
+      "min": 2
+    }
+  ],
+  "city": true,
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -200
+        },
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": -15,
+          "cycles": 30
+        }
+      ]
+    },
+    {
+      "effects": []
+    }
+  ]
+}

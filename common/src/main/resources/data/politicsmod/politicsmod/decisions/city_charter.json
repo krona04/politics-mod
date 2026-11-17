@@ -1,0 +1,20 @@
+{
+  "order": 70,
+  "cost": 800,
+  "target_city": true,
+  "city_conditions": [
+    {
+      "type": "city_unrest",
+      "min": 20
+    }
+  ],
+  "cooldown": 100,
+  "effects": [
+    {
+      "type": "city_modifier",
+      "modifier": "unrest",
+      "value": -15,
+      "cycles": 80
+    }
+  ]
+}

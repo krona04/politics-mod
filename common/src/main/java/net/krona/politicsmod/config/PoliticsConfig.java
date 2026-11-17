@@ -235,6 +235,29 @@ public final class PoliticsConfig {
     /** How many in-game days the Ledger tab keeps for its graphs. */
     public int ledgerHistoryDays = 30;
 
+    // ── Statecraft: events, decisions, goals (0.5.1) ─────────────────────
+    /** Events, decisions and goals from datapacks. Off: none fire, none can be taken, ranks stay as they are. */
+    public boolean statecraftEnabled = true;
+    /** At least this many economy cycles between two events of one country (10 = 30 minutes). */
+    public int eventMinGapCycles = 10;
+    /** Cycles the leader has to answer an event before its default option happens, unless the event sets its own. */
+    public int eventTimeoutCycles = 10;
+    /** Events of one country that may wait for an answer at the same time. */
+    public int maxPendingEvents = 2;
+    /** Events fire only while at least one member of the country is online. */
+    public boolean eventsNeedOnlineMember = true;
+    /** Scales how often events happen, %: 200 = twice as often, 50 = half as often. */
+    public int eventFrequencyPercent = 100;
+
+    // ── Villagers as citizens (0.5.1) ────────────────────────────────────
+    /** Vanilla villagers living inside a city become its citizens. */
+    public boolean villagerCitizensEnabled = true;
+    /** Tax every villager citizen brings its city per economy cycle, $ (before modifiers and the federal tax). */
+    public int villagerTaxPerCycle = 2;
+    /** A villager runs in every mayor election of a city with at least villagerCandidateMinVillagers villagers. */
+    public boolean villagerCandidates = true;
+    public int villagerCandidateMinVillagers = 3;
+
     // ── Guide ────────────────────────────────────────────────────────────
     /** Give the in-game guide book to every player the first time they join. */
     public boolean giveGuideOnFirstJoin = true;

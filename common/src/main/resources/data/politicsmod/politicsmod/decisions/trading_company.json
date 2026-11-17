@@ -1,0 +1,27 @@
+{
+  "order": 40,
+  "cost": 4000,
+  "conditions": [
+    {
+      "type": "embassies",
+      "min": 3
+    }
+  ],
+  "once": true,
+  "effects": [
+    {
+      "type": "modifier",
+      "modifier": "embassy_income",
+      "value": 25
+    },
+    {
+      "type": "modifier",
+      "modifier": "tax_income",
+      "value": 5
+    },
+    {
+      "type": "set_flag",
+      "flag": "trading_company"
+    }
+  ]
+}

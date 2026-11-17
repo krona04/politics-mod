@@ -1,0 +1,15 @@
+{
+  "order": 100,
+  "conditions": [
+    {
+      "type": "treasury",
+      "min": 15000
+    }
+  ],
+  "reward": [
+    {
+      "type": "prestige",
+      "amount": 5
+    }
+  ]
+}

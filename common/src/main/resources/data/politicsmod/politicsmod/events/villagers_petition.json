@@ -1,0 +1,34 @@
+{
+  "mean_time": 110,
+  "city": true,
+  "city_conditions": [
+    {
+      "type": "city_villagers",
+      "min": 8
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -150
+        },
+        {
+          "type": "legitimacy",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": 8,
+          "cycles": 20
+        }
+      ]
+    }
+  ]
+}

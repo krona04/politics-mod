@@ -1,0 +1,15 @@
+{
+  "order": 40,
+  "conditions": [
+    {
+      "type": "stability",
+      "min": 2
+    }
+  ],
+  "reward": [
+    {
+      "type": "legitimacy",
+      "amount": 10
+    }
+  ]
+}

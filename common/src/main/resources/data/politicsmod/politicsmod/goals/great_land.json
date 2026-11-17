@@ -1,0 +1,15 @@
+{
+  "order": 60,
+  "conditions": [
+    {
+      "type": "chunks",
+      "min": 150
+    }
+  ],
+  "reward": [
+    {
+      "type": "prestige",
+      "amount": 10
+    }
+  ]
+}

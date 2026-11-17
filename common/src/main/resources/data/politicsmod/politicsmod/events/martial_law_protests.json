@@ -1,0 +1,35 @@
+{
+  "mean_time": 90,
+  "conditions": [
+    {
+      "type": "law",
+      "law": "martial_law"
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "legitimacy",
+          "amount": -5
+        },
+        {
+          "type": "stability",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": -10
+        },
+        {
+          "type": "legitimacy",
+          "amount": 5
+        }
+      ]
+    }
+  ]
+}

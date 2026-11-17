@@ -1,0 +1,33 @@
+{
+  "mean_time": 100,
+  "conditions": [
+    {
+      "type": "chunks",
+      "min": 30
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -350
+        },
+        {
+          "type": "stability",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "modifier",
+          "modifier": "unrest",
+          "value": 10,
+          "cycles": 20
+        }
+      ]
+    }
+  ]
+}

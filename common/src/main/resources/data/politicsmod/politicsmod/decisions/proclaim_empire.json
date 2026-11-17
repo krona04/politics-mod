@@ -1,0 +1,51 @@
+{
+  "order": 20,
+  "cost": 20000,
+  "potential": [
+    {
+      "type": "rank",
+      "value": 1
+    }
+  ],
+  "conditions": [
+    {
+      "type": "cities",
+      "min": 6
+    },
+    {
+      "type": "chunks",
+      "min": 200
+    },
+    {
+      "type": "development",
+      "min": 35
+    },
+    {
+      "type": "prestige",
+      "min": 40
+    },
+    {
+      "type": "stability",
+      "min": 2
+    },
+    {
+      "type": "legitimacy",
+      "min": 60
+    }
+  ],
+  "once": true,
+  "effects": [
+    {
+      "type": "rank",
+      "rank": 2
+    },
+    {
+      "type": "prestige",
+      "amount": 20
+    },
+    {
+      "type": "legitimacy",
+      "amount": 15
+    }
+  ]
+}

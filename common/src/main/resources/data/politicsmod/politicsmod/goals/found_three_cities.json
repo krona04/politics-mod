@@ -1,0 +1,19 @@
+{
+  "order": 10,
+  "conditions": [
+    {
+      "type": "cities",
+      "min": 3
+    }
+  ],
+  "reward": [
+    {
+      "type": "prestige",
+      "amount": 5
+    },
+    {
+      "type": "treasury",
+      "amount": 1000
+    }
+  ]
+}

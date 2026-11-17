@@ -67,6 +67,25 @@ public class Country {
     public long stabilizedAt = 0L;
     /** Cities already announced as close to rebellion; not saved, so a restart may announce them again. */
     public final java.util.Set<String> restlessCities = new java.util.HashSet<>();
+    /** Modifiers of one city (events): UNREST in points, TAX_INCOME in percent. */
+    public final Map<String, List<net.krona.politicsmod.realm.TimedModifier>> cityModifiers = new HashMap<>();
+
+    // Statecraft (0.5.1): rank, events, decisions, goals
+    public net.krona.politicsmod.statecraft.CountryStatecraft statecraft = new net.krona.politicsmod.statecraft.CountryStatecraft();
+    /** Economy cycle the country was founded in; -1 for countries from before 0.5.1. */
+    public long foundedCycle = -1;
+
+    // Villagers living in the cities (0.5.1)
+    public final Map<UUID, net.krona.politicsmod.villagers.VillagerCitizen> villagers = new HashMap<>();
+    /** City -> the villager elected its mayor. A city has either a player mayor (cityMayors) or a villager one. */
+    public final Map<String, net.krona.politicsmod.villagers.VillagerMayor> villagerMayors = new HashMap<>();
+
+    /** Villagers living in a city. */
+    public int villagersIn(String city) {
+        int n = 0;
+        for (net.krona.politicsmod.villagers.VillagerCitizen v : villagers.values()) if (v.city.equals(city)) n++;
+        return n;
+    }
 
     // Infrastructure blocks
     public final List<Long>           embassyBlocks = new ArrayList<>();
@@ -225,6 +244,26 @@ public class Country {
         ListTag modifierList = new ListTag();
         for (net.krona.politicsmod.realm.TimedModifier m : modifiers) modifierList.add(m.save());
         tag.put("modifiers", modifierList);
+        CompoundTag cityModTag = new CompoundTag();
+        for (Map.Entry<String, List<net.krona.politicsmod.realm.TimedModifier>> e : cityModifiers.entrySet()) {
+            if (e.getValue().isEmpty()) continue;
+            ListTag list = new ListTag();
+            for (net.krona.politicsmod.realm.TimedModifier m : e.getValue()) list.add(m.save());
+            cityModTag.put(e.getKey(), list);
+        }
+        tag.put("cityModifiers", cityModTag);
+
+        // Statecraft and villagers
+        tag.put("statecraft", statecraft.save());
+        tag.putLong("foundedCycle", foundedCycle);
+        ListTag villagerList = new ListTag();
+        for (net.krona.politicsmod.villagers.VillagerCitizen v : villagers.values()) villagerList.add(v.save());
+        tag.put("villagers", villagerList);
+        ListTag vMayorList = new ListTag();
+        for (Map.Entry<String, net.krona.politicsmod.villagers.VillagerMayor> e : villagerMayors.entrySet()) {
+            vMayorList.add(e.getValue().save(e.getKey()));
+        }
+        tag.put("villagerMayors", vMayorList);
 
         // Protection flags
         tag.put("flags", saveFlags(flags));
@@ -336,6 +375,31 @@ public class Country {
         for (int i = 0; i < modifierList.size(); i++) {
             net.krona.politicsmod.realm.TimedModifier m = net.krona.politicsmod.realm.TimedModifier.load(modifierList.getCompound(i));
             if (m != null) country.modifiers.add(m);
+        }
+        CompoundTag cityModTag = tag.getCompound("cityModifiers");
+        for (String city : cityModTag.getAllKeys()) {
+            ListTag list = cityModTag.getList(city, Tag.TAG_COMPOUND);
+            List<net.krona.politicsmod.realm.TimedModifier> mods = new ArrayList<>();
+            for (int i = 0; i < list.size(); i++) {
+                net.krona.politicsmod.realm.TimedModifier m = net.krona.politicsmod.realm.TimedModifier.load(list.getCompound(i));
+                if (m != null) mods.add(m);
+            }
+            if (!mods.isEmpty()) country.cityModifiers.put(city, mods);
+        }
+
+        country.statecraft = net.krona.politicsmod.statecraft.CountryStatecraft.load(tag.getCompound("statecraft"));
+        country.foundedCycle = tag.contains("foundedCycle") ? tag.getLong("foundedCycle") : -1;
+        ListTag villagerList = tag.getList("villagers", Tag.TAG_COMPOUND);
+        for (int i = 0; i < villagerList.size(); i++) {
+            net.krona.politicsmod.villagers.VillagerCitizen v = net.krona.politicsmod.villagers.VillagerCitizen.load(villagerList.getCompound(i));
+            if (v != null && country.cities.contains(v.city)) country.villagers.put(v.id, v);
+        }
+        ListTag vMayorList = tag.getList("villagerMayors", Tag.TAG_COMPOUND);
+        for (int i = 0; i < vMayorList.size(); i++) {
+            CompoundTag mt = vMayorList.getCompound(i);
+            net.krona.politicsmod.villagers.VillagerMayor vm = net.krona.politicsmod.villagers.VillagerMayor.load(mt);
+            String city = mt.getString("city");
+            if (vm != null && country.cities.contains(city)) country.villagerMayors.put(city, vm);
         }
 
         loadFlags(tag.getCompound("flags"), country.flags);

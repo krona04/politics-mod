@@ -1,0 +1,31 @@
+{
+  "order": 30,
+  "cost": 1500,
+  "potential": [
+    {
+      "type": "cities",
+      "min": 2
+    }
+  ],
+  "target_city": true,
+  "city_conditions": [
+    {
+      "type": "is_capital",
+      "value": false
+    }
+  ],
+  "cooldown": 200,
+  "effects": [
+    {
+      "type": "capital"
+    },
+    {
+      "type": "stability",
+      "amount": -20
+    },
+    {
+      "type": "legitimacy",
+      "amount": -5
+    }
+  ]
+}

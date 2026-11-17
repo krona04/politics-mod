@@ -22,6 +22,8 @@ public class Election {
     public final Map<UUID, String> candidates = new LinkedHashMap<>();
     /** Voter -> candidate. */
     public final Map<UUID, UUID> votes = new HashMap<>();
+    /** Villager candidates (0.5.1) -> the MayorProgram key they run on. Players are not in it. */
+    public final Map<UUID, String> programs = new HashMap<>();
 
     public Election(Type type, String city, long endsAt) {
         this.type = type;
@@ -66,6 +68,8 @@ public class Election {
             CompoundTag c = new CompoundTag();
             c.putUUID("id", e.getKey());
             c.putString("name", e.getValue());
+            String program = programs.get(e.getKey());
+            if (program != null) c.putString("program", program);
             list.add(c);
         }
         tag.put("candidates", list);
@@ -92,7 +96,10 @@ public class Election {
         ListTag list = tag.getList("candidates", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag c = list.getCompound(i);
-            if (c.hasUUID("id")) election.candidates.put(c.getUUID("id"), c.getString("name"));
+            if (c.hasUUID("id")) {
+                election.candidates.put(c.getUUID("id"), c.getString("name"));
+                if (c.contains("program")) election.programs.put(c.getUUID("id"), c.getString("program"));
+            }
         }
         ListTag voteList = tag.getList("votes", Tag.TAG_COMPOUND);
         for (int i = 0; i < voteList.size(); i++) {

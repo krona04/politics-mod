@@ -1,0 +1,39 @@
+{
+  "mean_time": 110,
+  "conditions": [
+    {
+      "type": "wars",
+      "max": 0
+    },
+    {
+      "type": "chunks",
+      "min": 40
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "prestige",
+          "amount": -2
+        },
+        {
+          "type": "stability",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "prestige",
+          "amount": 3
+        },
+        {
+          "type": "stability",
+          "amount": -10
+        }
+      ]
+    }
+  ]
+}

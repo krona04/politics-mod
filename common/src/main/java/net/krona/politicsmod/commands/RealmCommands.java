@@ -115,9 +115,10 @@ public final class RealmCommands {
         for (ModifierType type : ModifierType.values()) {
             Breakdown b = Realm.modifiers(c, type);
             if (b.isEmpty()) continue;
-            boolean goodIsPositive = type != ModifierType.UPKEEP && type != ModifierType.LAND_PRICE;
+            boolean goodIsPositive = type != ModifierType.UPKEEP && type != ModifierType.LAND_PRICE && type != ModifierType.UNREST;
+            String unit = type == ModifierType.UNREST ? "" : "%";
             p.sendSystemMessage(hover(Component.translatable("message.politicsmod.realm.modifier", Component.translatable(type.nameKey()),
-                    Breakdown.format(b.total(), 1) + "%").withStyle(ChatFormatting.AQUA), b.lines("%", 1, goodIsPositive)));
+                    Breakdown.format(b.total(), 1) + unit).withStyle(ChatFormatting.AQUA), b.lines(unit, 1, goodIsPositive)));
         }
         for (Map.Entry<String, Realm.CityStats> e : cities.entrySet()) {
             Realm.CityStats s = e.getValue();
@@ -199,7 +200,7 @@ public final class RealmCommands {
             ctx.getSource().sendSuccess(() -> Component.literal(" [" + m.id() + "] ")
                     .append(Component.translatable("realm.politicsmod.source.named", m.name()))
                     .append(" — ").append(Component.translatable(m.type().nameKey()))
-                    .append(" " + Breakdown.format(m.value(), 1) + "%, " + left).withStyle(ChatFormatting.WHITE), false);
+                    .append(" " + Breakdown.format(m.value(), 1) + (m.type() == ModifierType.UNREST ? "" : "%") + ", " + left).withStyle(ChatFormatting.WHITE), false);
         }
         return 1;
     }

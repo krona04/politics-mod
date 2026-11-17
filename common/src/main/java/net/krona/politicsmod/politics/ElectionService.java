@@ -38,6 +38,7 @@ public final class ElectionService {
             mgr.postNews("news.politicsmod.election_mayor_started", List.of(country.getName()), city, country.getName());
             Notify.members(country, Component.translatable("message.politicsmod.election.started_mayor", city, minutes)
                     .withStyle(ChatFormatting.GOLD));
+            net.krona.politicsmod.villagers.VillagerCitizens.nominate(mgr, country, country.election);
         }
     }
 
@@ -61,12 +62,16 @@ public final class ElectionService {
         country.lastElectionAt = System.currentTimeMillis();
         mgr.setDirty();
 
-        // Candidates who left the country can't win
-        e.candidates.keySet().removeIf(id -> country.getRole(id) == CountryRole.GUEST);
+        // Candidates who left the country can't win; nor villagers who no longer live in the city
+        e.candidates.keySet().removeIf(id -> e.programs.containsKey(id)
+                ? !country.villagers.containsKey(id) || !country.villagers.get(id).city.equals(e.city)
+                : country.getRole(id) == CountryRole.GUEST);
         e.votes.entrySet().removeIf(v -> country.getRole(v.getKey()) == CountryRole.GUEST || !e.candidates.containsKey(v.getValue()));
         if (e.type == Election.Type.MAYOR && !country.cities.contains(e.city)) return;
 
-        UUID incumbent = e.type == Election.Type.LEADER ? country.getLeader() : country.cityMayors.get(e.city);
+        net.krona.politicsmod.villagers.VillagerMayor villagerIncumbent = country.villagerMayors.get(e.city);
+        UUID incumbent = e.type == Election.Type.LEADER ? country.getLeader()
+                : villagerIncumbent != null ? villagerIncumbent.id() : country.cityMayors.get(e.city);
         UUID winner = e.winner(incumbent);
         if (winner == null) {
             mgr.postNews("news.politicsmod.election_no_candidates", List.of(country.getName()), country.getName());
@@ -91,6 +96,19 @@ public final class ElectionService {
             mgr.postNews("news.politicsmod.election_leader_won", List.of(country.getName()), winnerName, country.getName(), votes);
             Notify.members(country, Component.translatable("message.politicsmod.election.leader_won", winnerName, votes)
                     .withStyle(ChatFormatting.GREEN));
+        } else if (e.programs.containsKey(winner)) {
+            // A villager wins: the player mayor, if any, steps down
+            UUID playerMayor = country.cityMayors.remove(e.city);
+            if (playerMayor != null && country.getRole(playerMayor) == CountryRole.MAYOR && !country.cityMayors.containsValue(playerMayor)) {
+                country.setRole(playerMayor, CountryRole.CITIZEN);
+            }
+            net.krona.politicsmod.villagers.MayorProgram program = net.krona.politicsmod.villagers.VillagerCitizens.programOf(e, winner);
+            country.villagerMayors.put(e.city, new net.krona.politicsmod.villagers.VillagerMayor(winner, winnerName, program,
+                    mgr.getCycleCount()));
+            mgr.postNews("news.politicsmod.villager_mayor_won", List.of(country.getName()), winnerName, e.city,
+                    net.krona.politicsmod.villagers.VillagerCitizens.programArg(program), votes);
+            Notify.members(country, Component.translatable("message.politicsmod.election.villager_won", winnerName, e.city,
+                    Component.translatable(program.nameKey()), votes).withStyle(ChatFormatting.GREEN));
         } else {
             mgr.setCityMayor(country.getName(), e.city, winner);
             if (country.getRole(winner) == CountryRole.CITIZEN) country.setRole(winner, CountryRole.MAYOR);

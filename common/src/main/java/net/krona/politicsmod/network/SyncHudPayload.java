@@ -18,9 +18,12 @@ import net.minecraft.resources.ResourceLocation;
  * @param plotSale  sale price of a free plot (0 = not for sale)
  * @param plotRent  rent of a free plot per cycle (0 = not for rent)
  * @param myCountry the player's own country, "" if none (the world borders colour it apart from the others)
+ * @param events    events of the player's country waiting for an answer (0.5.1)
+ * @param canAnswer the player may answer them (leader, or a mayor while the leader is offline)
  */
 public record SyncHudPayload(String country, String city, int treasury, int wallet,
-                             boolean plot, String plotOwner, int plotSale, int plotRent, String myCountry) implements CustomPacketPayload {
+                             boolean plot, String plotOwner, int plotSale, int plotRent, String myCountry,
+                             int events, boolean canAnswer) implements CustomPacketPayload {
 
     /** Treasury value meaning "the player has no country"; any real balance, debt included, differs from it. */
     public static final int NO_COUNTRY = Integer.MIN_VALUE;
@@ -46,10 +49,12 @@ public record SyncHudPayload(String country, String city, int treasury, int wall
         buf.writeVarInt(p.plotSale);
         buf.writeVarInt(p.plotRent);
         buf.writeUtf(p.myCountry);
+        buf.writeVarInt(p.events);
+        buf.writeBoolean(p.canAnswer);
     }
 
     private static SyncHudPayload read(FriendlyByteBuf buf) {
         return new SyncHudPayload(buf.readUtf(), buf.readUtf(), buf.readInt(), buf.readInt(),
-                buf.readBoolean(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
+                buf.readBoolean(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readVarInt(), buf.readBoolean());
     }
 }

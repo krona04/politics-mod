@@ -37,10 +37,11 @@ public record EconomySummary(
         int loanIncome,       // installments other countries pay this one per cycle
         int debt,             // total still owed on loans
         int settlementIncome, // nation's share of colony and village tax (MineColonies, Millénaire)
-        int nonCoreLoss       // tax blocks on non-core land bring this much less (nation and cities together)
+        int nonCoreLoss,      // tax blocks on non-core land bring this much less (nation and cities together)
+        int villagerIncome    // nation's share of the tax villager citizens pay their cities (0.5.1)
 ) {
     public int income() {
-        return directIncome + federalTaxIncome + embassyIncome + settlementIncome;
+        return directIncome + federalTaxIncome + embassyIncome + settlementIncome + villagerIncome;
     }
 
     public int net() {
@@ -101,6 +102,14 @@ public record EconomySummary(
             settlements += inCity ? (country.federalTaxRate > 0 ? amount * country.federalTaxRate / 100 : 0) : amount;
         }
 
+        int villagers = 0;
+        if (country.federalTaxRate > 0) {
+            for (String city : country.cities) {
+                int pct = rates.country() + rates.city().getOrDefault(city, 0);
+                villagers += net.krona.politicsmod.villagers.VillagerCitizens.cityTax(country, city, pct) * country.federalTaxRate / 100;
+            }
+        }
+
         int salaryCost = 0;
         int incomeTaxReturn = 0;
         for (int salary : country.salaries.values()) {
@@ -129,6 +138,7 @@ public record EconomySummary(
                 loanIncome,
                 mgr.getDebt(countryName),
                 settlements,
-                nonCoreLoss);
+                nonCoreLoss,
+                villagers);
     }
 }

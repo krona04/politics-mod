@@ -43,6 +43,9 @@ public class PoliticsEvents {
         int treasury = myCountry != null ? manager.getBalance(myCountry) : SyncHudPayload.NO_COUNTRY;
 
         net.krona.politicsmod.politics.Plot plot = land ? manager.getPlot(pos) : null;
+        net.krona.politicsmod.politics.Country mine = myCountry != null ? manager.getCountry(myCountry) : null;
+        int events = mine != null && net.krona.politicsmod.statecraft.StatecraftService.enabled() ? mine.statecraft.pending.size() : 0;
+        boolean canAnswer = events > 0 && net.krona.politicsmod.statecraft.StatecraftService.mayAnswer(mine, player.getUUID());
         ModNetworking.toPlayer(player, new SyncHudPayload(
                 currentCountry == null ? "" : currentCountry,
                 currentCity == null ? "" : currentCity,
@@ -52,7 +55,9 @@ public class PoliticsEvents {
                 plot != null && plot.isOwned() ? plot.ownerName : "",
                 plot != null ? plot.salePrice : 0,
                 plot != null ? plot.rentPrice : 0,
-                myCountry == null ? "" : myCountry
+                myCountry == null ? "" : myCountry,
+                events,
+                canAnswer
         ));
     }
 }

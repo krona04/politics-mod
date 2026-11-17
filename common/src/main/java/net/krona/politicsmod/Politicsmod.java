@@ -27,6 +27,7 @@ public final class Politicsmod {
 
         ModNetworking.register();
         ModEvents.register();
+        net.krona.politicsmod.statecraft.Statecraft.register();
 
         LOGGER.info("PoliticsMod initialised");
     }

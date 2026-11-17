@@ -216,7 +216,17 @@ public class PoliticsTab extends DashboardTab {
                 int ry = top + i * (ROW_H + 1);
                 UiKit.row(g, rx + 1, ry, rw - 2, ROW_H, i == selectedCandidate, UiKit.inside(mx, my, rx, ry, rw, ROW_H));
                 boolean mine = c.name().equals(e.myVote());
-                UiKit.text(g, font, Component.literal((mine ? "✔ " : "") + c.name()), rx + 5, ry + 2, rw - 62, mine ? UiKit.GOOD : UiKit.TEXT);
+                net.minecraft.network.chat.MutableComponent label = Component.literal((mine ? "✔ " : "") + c.name());
+                if (!c.program().isEmpty()) {
+                    // A villager: the program it runs on follows the name, explained on hover
+                    label.append(Component.literal(" ⌂ ").withStyle(ChatFormatting.DARK_AQUA))
+                            .append(Component.translatable("villager.politicsmod.program." + c.program()).withStyle(ChatFormatting.GRAY));
+                    hover(rx, ry, rw - 56, ROW_H, List.of(
+                            Component.translatable("gui.politicsmod.politics.villager_candidate", c.name()).withStyle(ChatFormatting.AQUA),
+                            Component.translatable("villager.politicsmod.program." + c.program()).withStyle(ChatFormatting.WHITE),
+                            Component.translatable("villager.politicsmod.program." + c.program() + ".desc").withStyle(ChatFormatting.GRAY)));
+                }
+                UiKit.text(g, font, label, rx + 5, ry + 2, rw - 62, mine ? UiKit.GOOD : UiKit.TEXT);
                 UiKit.progress(g, rx + rw - 52, ry + 3, 28, 5, total == 0 ? 0 : c.votes() / (float) total, UiKit.ACCENT);
                 UiKit.textRight(g, font, Component.literal(String.valueOf(c.votes())), rx + rw - 5, ry + 2, UiKit.TEXT_DIM);
             }

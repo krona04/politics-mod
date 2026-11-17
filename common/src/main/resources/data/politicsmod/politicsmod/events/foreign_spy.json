@@ -1,0 +1,42 @@
+{
+  "mean_time": 140,
+  "conditions": [
+    {
+      "type": "any",
+      "conditions": [
+        {
+          "type": "wars",
+          "min": 1
+        },
+        {
+          "type": "embassies",
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "prestige",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -200
+        },
+        {
+          "type": "modifier",
+          "modifier": "siege_defense",
+          "value": 25,
+          "cycles": 30
+        }
+      ]
+    }
+  ]
+}

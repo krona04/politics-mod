@@ -1,0 +1,42 @@
+{
+  "mean_time": 110,
+  "conditions": [
+    {
+      "type": "cities",
+      "min": 2
+    }
+  ],
+  "city": true,
+  "city_conditions": [
+    {
+      "type": "is_capital",
+      "value": false
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -300
+        },
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": -15,
+          "cycles": 40
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": 10,
+          "cycles": 30
+        }
+      ]
+    }
+  ]
+}

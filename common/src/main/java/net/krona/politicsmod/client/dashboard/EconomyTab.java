@@ -109,6 +109,8 @@ public class EconomyTab extends DashboardTab {
                 modifierTip(d, ModifierType.EMBASSY_INCOME, true));
         if (e.settlementIncome() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_settlements", e.settlementIncome(), true,
                 modifierTip(d, ModifierType.TAX_INCOME, true));
+        if (e.villagerIncome() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_villagers", e.villagerIncome(), true,
+                modifierTip(d, ModifierType.TAX_INCOME, true));
         ly = money(g, ly, "gui.politicsmod.economy.line_upkeep", e.upkeep(), false, modifierTip(d, ModifierType.UPKEEP, false));
         if (e.tributeAmount() > 0) ly = money(g, ly, "gui.politicsmod.economy.line_tribute", e.tributeAmount(), false);
         if (e.salaryCost() > 0) {

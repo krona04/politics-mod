@@ -1,0 +1,25 @@
+{
+  "mean_time": 90,
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -400
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": -25
+        },
+        {
+          "type": "legitimacy",
+          "amount": -3
+        }
+      ]
+    }
+  ]
+}

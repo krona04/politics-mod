@@ -1,0 +1,35 @@
+{
+  "mean_time": 120,
+  "city": true,
+  "city_conditions": [
+    {
+      "type": "villager_mayor"
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": -10,
+          "cycles": 30
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "legitimacy",
+          "amount": -3
+        },
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": 8,
+          "cycles": 20
+        }
+      ]
+    }
+  ]
+}

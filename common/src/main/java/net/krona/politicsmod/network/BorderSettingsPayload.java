@@ -18,6 +18,9 @@ public record BorderSettingsPayload(int action) implements CustomPacketPayload {
 
     public static final int TOGGLE = 0;
     public static final int CYCLE_STYLE = 1;
+    /** /politicsmod hud: HUD_CYCLE opens the HUD settings, then one action per ClientHudSettings.Mode in order (0.5.1). */
+    public static final int HUD_CYCLE = 2;
+    public static final int HUD_MODE_FIRST = 3;
 
     public static final Type<BorderSettingsPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(Politicsmod.MODID, "border_settings"));
@@ -35,6 +38,12 @@ public record BorderSettingsPayload(int action) implements CustomPacketPayload {
         context.queue(() -> {
             if (payload.action() == CYCLE_STYLE) {
                 ClientBorderSettings.cycleStyle();
+            } else if (payload.action() == HUD_CYCLE) {
+                net.krona.politicsmod.client.ClientHudSettings.openSettings();
+            } else if (payload.action() >= HUD_MODE_FIRST) {
+                var modes = net.krona.politicsmod.client.ClientHudSettings.Mode.values();
+                int i = payload.action() - HUD_MODE_FIRST;
+                if (i < modes.length) net.krona.politicsmod.client.ClientHudSettings.set(modes[i], true);
             } else {
                 ClientBorderSettings.toggle();
             }

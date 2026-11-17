@@ -1,0 +1,25 @@
+{
+  "mean_time": 250,
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": 700
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "wallets",
+          "amount": 150
+        },
+        {
+          "type": "legitimacy",
+          "amount": 5
+        }
+      ]
+    }
+  ]
+}

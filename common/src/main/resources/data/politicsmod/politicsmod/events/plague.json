@@ -1,0 +1,39 @@
+{
+  "mean_time": 160,
+  "conditions": [
+    {
+      "type": "cities",
+      "min": 1
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -300
+        },
+        {
+          "type": "modifier",
+          "modifier": "tax_income",
+          "value": -10,
+          "cycles": 20
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": -30
+        },
+        {
+          "type": "modifier",
+          "modifier": "unrest",
+          "value": 10,
+          "cycles": 30
+        }
+      ]
+    }
+  ]
+}

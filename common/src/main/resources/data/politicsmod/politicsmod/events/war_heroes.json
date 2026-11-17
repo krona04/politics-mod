@@ -1,0 +1,37 @@
+{
+  "mean_time": 100,
+  "conditions": [
+    {
+      "type": "wars",
+      "min": 1
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -200
+        },
+        {
+          "type": "prestige",
+          "amount": 3
+        },
+        {
+          "type": "stability",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "modifier",
+          "modifier": "siege_defense",
+          "value": 20,
+          "cycles": 30
+        }
+      ]
+    }
+  ]
+}

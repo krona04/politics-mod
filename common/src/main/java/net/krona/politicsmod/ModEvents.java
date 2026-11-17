@@ -46,6 +46,7 @@ public final class ModEvents {
                 }
                 manager.syncToPlayer(player);
                 ModNetworking.toPlayer(player, net.krona.politicsmod.network.SyncFlagsPayload.of(manager));
+                net.krona.politicsmod.statecraft.StatecraftService.remind(manager, player);
             }
         });
 
@@ -69,6 +70,7 @@ public final class ModEvents {
                     net.krona.politicsmod.commands.GeneralCommands.register(dispatcher);
                     net.krona.politicsmod.commands.StateCommands.register(dispatcher);
                     net.krona.politicsmod.commands.RealmCommands.register(dispatcher);
+                    net.krona.politicsmod.commands.StatecraftCommands.register(dispatcher);
                 });
 
         BlockEvent.BREAK.register(

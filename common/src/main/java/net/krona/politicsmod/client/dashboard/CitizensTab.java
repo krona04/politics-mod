@@ -21,7 +21,9 @@ public class CitizensTab extends DashboardTab {
     private int selected = -1;
     private int scroll = 0;
     private int listH;
-    private FlatButton btnRole, btnKick, btnInvite, btnSalary;
+    private FlatButton btnRole, btnKick, btnInvite, btnSalary, btnPlayers, btnVillagers;
+    /** Showing the villager citizens instead of the players (0.5.1). */
+    private boolean villagersView = false;
     private EditBox inviteInput, salaryInput;
 
     public CitizensTab(CountryDashboardScreen screen) {
@@ -35,6 +37,21 @@ public class CitizensTab extends DashboardTab {
 
     @Override
     protected void addWidgets() {
+        // Players / villagers switch in the header
+        Component villagersLabel = Component.translatable("gui.politicsmod.citizens.villagers_tab");
+        Component playersLabel = Component.translatable("gui.politicsmod.citizens.players_tab");
+        int vw = FlatButton.widthFor(villagersLabel) + 4, pw = FlatButton.widthFor(playersLabel) + 4;
+        btnVillagers = add(new FlatButton(x + w - vw, y - 2, vw, 12, villagersLabel, FlatButton.Style.TAB, () -> {
+            villagersView = true;
+            scroll = 0;
+            selected = -1;
+        }));
+        btnPlayers = add(new FlatButton(x + w - vw - pw - 2, y - 2, pw, 12, playersLabel, FlatButton.Style.TAB, () -> {
+            villagersView = false;
+            scroll = 0;
+            selected = -1;
+        }));
+
         // Two rows under the list: [invite name][Invite] and [salary][Set salary]; buttons are as wide as their labels
         int by = y + h - 15;
         Component salaryLabel = Component.translatable("gui.politicsmod.citizens.set_salary");
@@ -69,25 +86,27 @@ public class CitizensTab extends DashboardTab {
 
     @Override
     public void update() {
-        CountryDetailsPayload.Member m = member();
+        btnPlayers.selected(!villagersView);
+        btnVillagers.selected(villagersView);
+        CountryDetailsPayload.Member m = villagersView ? null : member();
         boolean actionable = m != null && m.online() && !"LEADER".equals(m.role());
-        btnRole.visible = screen.isLeader();
+        btnRole.visible = screen.isLeader() && !villagersView;
         btnRole.active = actionable;
         btnRole.setMessage(Component.translatable(m != null && "MAYOR".equals(m.role())
                 ? "gui.politicsmod.citizens.make_citizen" : "gui.politicsmod.citizens.make_mayor"));
-        btnKick.visible = screen.can(RoleAction.KICK);
+        btnKick.visible = screen.can(RoleAction.KICK) && !villagersView;
         btnKick.active = actionable;
         Component hint = m != null && !m.online() ? Component.translatable("gui.politicsmod.citizens.must_be_online") : null;
         btnRole.tooltip(hint);
         btnKick.tooltip(hint);
 
-        boolean invite = screen.can(RoleAction.INVITE);
+        boolean invite = screen.can(RoleAction.INVITE) && !villagersView;
         inviteInput.visible = invite;
         btnInvite.visible = invite;
         btnInvite.active = PLAYER_NAME.matcher(inviteInput.getValue()).matches();
 
-        salaryInput.visible = screen.isLeader();
-        btnSalary.visible = screen.isLeader();
+        salaryInput.visible = screen.isLeader() && !villagersView;
+        btnSalary.visible = screen.isLeader() && !villagersView;
         btnSalary.active = m != null && !salaryInput.getValue().isEmpty();
     }
 
@@ -124,6 +143,10 @@ public class CitizensTab extends DashboardTab {
             loading(g);
             return;
         }
+        if (villagersView) {
+            renderVillagers(g, mx, my, d);
+            return;
+        }
         List<CountryDetailsPayload.Member> members = d.members();
         UiKit.section(g, font, Component.translatable("gui.politicsmod.citizens.header", members.size()), x, y);
         int top = y + 13;
@@ -144,7 +167,40 @@ public class CitizensTab extends DashboardTab {
         }
         if (members.size() > rows) {
             UiKit.textRight(g, font, Component.literal((scroll + 1) + "–" + Math.min(members.size(), scroll + rows) + "/" + members.size()),
-                    x + w, y, UiKit.TEXT_MUTED);
+                    btnPlayers.getX() - 4, y, UiKit.TEXT_MUTED);
+        }
+    }
+
+    /** Villagers living in the cities: name, profession and city. They pay a little tax and may run for mayor. */
+    private void renderVillagers(GuiGraphics g, int mx, int my, CountryDetailsPayload d) {
+        List<CountryDetailsPayload.VillagerInfo> list = d.villagers();
+        int total = 0;
+        for (CountryDetailsPayload.City c : d.cities()) total += c.villagers();
+        UiKit.section(g, font, Component.translatable("gui.politicsmod.citizens.villagers_header", total), x, y);
+        int top = y + 13;
+        int listFull = y + h - top;
+        UiKit.card(g, x, top, w, listFull);
+        if (list.isEmpty()) {
+            UiKit.wrap(g, font, Component.translatable("gui.politicsmod.citizens.no_villagers"), x + 5, top + 5, w - 10, 4, UiKit.TEXT_MUTED);
+            return;
+        }
+        int rows = listFull / ROW_H;
+        scroll = clampScroll(scroll, list.size(), rows);
+        int nameW = w * 38 / 100, profX = x + 8 + nameW;
+        for (int r = 0; r < rows && scroll + r < list.size(); r++) {
+            CountryDetailsPayload.VillagerInfo v = list.get(scroll + r);
+            int ry = top + 1 + r * ROW_H;
+            UiKit.row(g, x + 1, ry, w - 2, ROW_H - 1, false, UiKit.inside(mx, my, x, ry, w, ROW_H));
+            UiKit.text(g, font, Component.literal(v.name()), x + 5, ry + 2, nameW - 4, UiKit.TEXT);
+            Component city = Component.literal(v.city());
+            int cityW = Math.min(font.width(city), w * 30 / 100);
+            UiKit.text(g, font, Component.translatable("entity.minecraft.villager." + v.profession()), profX, ry + 2,
+                    x + w - 10 - cityW - profX, UiKit.TEXT_DIM);
+            UiKit.text(g, font, city, x + w - 6 - cityW, ry + 2, cityW, UiKit.INFO);
+        }
+        if (list.size() > rows) {
+            UiKit.textRight(g, font, Component.literal((scroll + 1) + "–" + Math.min(list.size(), scroll + rows) + "/" + list.size()),
+                    btnPlayers.getX() - 4, y, UiKit.TEXT_MUTED);
         }
     }
 
@@ -160,7 +216,7 @@ public class CitizensTab extends DashboardTab {
     public boolean mouseClicked(double mx, double my, int button) {
         CountryDetailsPayload d = details();
         int top = y + 13;
-        if (d == null || !UiKit.inside(mx, my, x, top, w, listH)) return false;
+        if (villagersView || d == null || !UiKit.inside(mx, my, x, top, w, listH)) return false;
         int index = scroll + (int) ((my - top - 1) / ROW_H);
         selected = index < d.members().size() ? index : -1;
         update();

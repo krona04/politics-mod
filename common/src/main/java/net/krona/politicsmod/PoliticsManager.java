@@ -72,9 +72,10 @@ public class PoliticsManager extends SavedData {
      * Version of the saved data layout. Bump it when a change needs migrating old worlds.
      * 1 = up to 0.3 (not written), 2 = 0.4 (wallets, salaries, plots, protection flags),
      * 3 = 0.4 (news, loans, laws, elections), 4 = 0.5 (cores, cycle count, ledger history; land from
-     * older worlds counts as core).
+     * older worlds counts as core), 5 = 0.5.1 (statecraft, villager citizens and mayors, city modifiers; nothing to
+     * migrate, older countries simply have none).
      */
-    public static final int FORMAT_VERSION = 4;
+    public static final int FORMAT_VERSION = 5;
 
     public PoliticsManager() {}
 
@@ -608,6 +609,7 @@ public class PoliticsManager extends SavedData {
         // A player can be mayor of only one city
         c.cityMayors.entrySet().removeIf(e -> e.getValue().equals(mayorUUID));
         c.cityMayors.put(cityName, mayorUUID);
+        c.villagerMayors.remove(cityName);
         setDirty();
     }
 
@@ -815,6 +817,7 @@ public class PoliticsManager extends SavedData {
             }
         }
         Country founded = new Country(name, owner.getUUID());
+        founded.foundedCycle = m.cycleCount;
         // Nobody else's colony or village may end up inside the new country
         if (level instanceof ServerLevel sl) {
             Component blocked = null;
@@ -924,6 +927,18 @@ public class PoliticsManager extends SavedData {
                 }
             }
 
+            // Villagers living in the cities pay a little to their city, which shares it with the nation
+            for (String city : country.cities) {
+                int pct = rates.country() + rates.city().getOrDefault(city, 0);
+                int amount = net.krona.politicsmod.villagers.VillagerCitizens.cityTax(country, city, pct);
+                if (amount <= 0) continue;
+                int fedTax = country.federalTaxRate > 0 ? amount * country.federalTaxRate / 100 : 0;
+                country.cityBalances.merge(city, amount - fedTax, Integer::sum);
+                country.balance += fedTax;
+                net.krona.politicsmod.economy.DailyReport.income(country, "gui.politicsmod.economy.line_villagers", fedTax);
+            }
+            net.krona.politicsmod.villagers.VillagerCitizens.builders(this, country);
+
             // Territory upkeep: the treasury can go into debt, down to the configured limit
             net.krona.politicsmod.economy.DailyReport.expense(country, "gui.politicsmod.economy.line_upkeep",
                     charge(country, upkeep(country, chunks)));
@@ -1003,6 +1018,10 @@ public class PoliticsManager extends SavedData {
         // ── Realm: stability, legitimacy, prestige, cores
         Realm.cycle(this);
 
+        // ── Statecraft: events, goals; then who lives in the cities for the next cycle
+        net.krona.politicsmod.statecraft.StatecraftService.cycle(this);
+        net.krona.politicsmod.villagers.VillagerCitizens.census(this, level);
+
         setDirty();
     }
 
@@ -1050,6 +1069,7 @@ public class PoliticsManager extends SavedData {
 
         // Create the new country
         Country newCountry = new Country(cityName, newLeaderUUID);
+        newCountry.foundedCycle = cycleCount;
         newCountry.balance = old.cityBalances.getOrDefault(cityName, 0);
         newCountry.taxBlocks.addAll(transferTax);
         countries.put(cityName, newCountry);
@@ -1065,6 +1085,9 @@ public class PoliticsManager extends SavedData {
         syncChunksToAll(cityChunks);
 
         // Clean up the old country
+        old.villagers.values().removeIf(v -> v.city.equals(cityName));
+        old.villagerMayors.remove(cityName);
+        old.cityModifiers.remove(cityName);
         old.setRole(newLeaderUUID, CountryRole.GUEST);
         old.cities.remove(cityName);
         old.cityBalances.remove(cityName);

@@ -1,0 +1,29 @@
+{
+  "mean_time": 120,
+  "conditions": [
+    {
+      "type": "law",
+      "law": "free_trade"
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "modifier",
+          "modifier": "embassy_income",
+          "value": 30,
+          "cycles": 40
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": 450
+        }
+      ]
+    }
+  ]
+}

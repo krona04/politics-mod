@@ -73,8 +73,17 @@ public record CountryDetailsPayload(
         List<ChunkValue> chunkIncome, // own chunks with tax blocks, value = income per cycle
         List<LedgerRow> ledger,     // every country, for the Ledger tab and the stability map
         List<History> history,      // daily samples; treasury and net only for the viewer's own country
-        List<net.krona.politicsmod.realm.Alerts.Alert> alerts
+        List<net.krona.politicsmod.realm.Alerts.Alert> alerts,
+        net.krona.politicsmod.statecraft.StatecraftService.View statecraft, // events, decisions, goals, rank (0.5.1)
+        List<VillagerInfo> villagers // villager citizens, by city then name (0.5.1)
 ) implements CustomPacketPayload {
+
+    /** A villager citizen; profession is the id path ("farmer", "none"). */
+    public record VillagerInfo(String name, String city, String profession) {
+    }
+
+    /** At most this many villagers are sent; the count in the header is the real one. */
+    private static final int VILLAGERS_SENT = 300;
 
     /**
      * Stability, legitimacy and prestige with what moves them; modifiers by ModifierType ordinal.
@@ -122,14 +131,16 @@ public record CountryDetailsPayload(
     }
 
     /** nextDevelopmentCost -1 = at the limit; taxPercent = what development and unrest add to its tax blocks. */
+    /** mayorProgram = MayorProgram key when the mayor is a villager, "" for a player mayor or none. */
     public record City(String name, String mayor, int balance, int chunks, int development, int boughtDevelopment,
-                       int nextDevelopmentCost, int nonCore, Breakdown unrest, int taxPercent) {
+                       int nextDevelopmentCost, int nonCore, Breakdown unrest, int taxPercent, int villagers, String mayorProgram) {
         public int unrestValue() {
             return Math.max(0, Math.min(100, unrest.total()));
         }
     }
 
-    public record Candidate(String name, int votes) {
+    /** program = MayorProgram key of a villager candidate, "" for players. */
+    public record Candidate(String name, int votes, String program) {
     }
 
     /** type "" = no election running. */
@@ -211,10 +222,13 @@ public record CountryDetailsPayload(
         List<City> cities = new ArrayList<>();
         for (String city : country.cities) {
             UUID mayor = country.cityMayors.get(city);
+            net.krona.politicsmod.villagers.VillagerMayor vm = country.villagerMayors.get(city);
             Realm.CityStats s = cityStats.get(city);
-            cities.add(new City(city, mayor == null ? "" : nameOf(server, mayor),
+            String mayorName = vm != null ? vm.name() : mayor == null ? "" : nameOf(server, mayor);
+            cities.add(new City(city, mayorName,
                     country.cityBalances.getOrDefault(city, 0), s.chunks(), s.development(), s.bought(),
-                    Realm.developmentCost(country, city), s.nonCore(), s.unrest(), Realm.cityTaxPercent(s)));
+                    Realm.developmentCost(country, city), s.nonCore(), s.unrest(), Realm.cityTaxPercent(s), s.villagers(),
+                    vm != null ? vm.program().key() : ""));
         }
 
         int laws = 0;
@@ -278,7 +292,19 @@ public record CountryDetailsPayload(
                 chunkIncome(mgr, country, cityStats),
                 ledger(mgr),
                 history(mgr, countryName),
-                net.krona.politicsmod.realm.Alerts.of(mgr, country, me, economy, cityStats, trend));
+                net.krona.politicsmod.realm.Alerts.of(mgr, country, me, economy, cityStats, trend),
+                net.krona.politicsmod.statecraft.StatecraftService.view(mgr, country, me),
+                villagers(country));
+    }
+
+    private static List<VillagerInfo> villagers(Country c) {
+        List<VillagerInfo> list = new ArrayList<>();
+        for (net.krona.politicsmod.villagers.VillagerCitizen v : c.villagers.values()) {
+            list.add(new VillagerInfo(v.name, v.city, v.profession));
+        }
+        list.sort(Comparator.comparing(VillagerInfo::city, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(VillagerInfo::name, String.CASE_INSENSITIVE_ORDER));
+        return list.size() > VILLAGERS_SENT ? new ArrayList<>(list.subList(0, VILLAGERS_SENT)) : list;
     }
 
     private static RealmInfo realmInfo(PoliticsManager mgr, Country c, Breakdown trend) {
@@ -321,7 +347,8 @@ public record CountryDetailsPayload(
     private static List<LedgerRow> ledger(PoliticsManager mgr) {
         List<LedgerRow> rows = new ArrayList<>();
         for (Country c : mgr.getCountries().values()) {
-            rows.add(new LedgerRow(c.getName(), mgr.getChunksOf(c.getName()).size(), c.cities.size(), c.getMembers().size(),
+            rows.add(new LedgerRow(c.getName(), mgr.getChunksOf(c.getName()).size(), c.cities.size(),
+                    c.getMembers().size() + c.villagers.size(),
                     Realm.totalDevelopment(mgr, c), c.stability, Math.round(c.prestige), Math.round(c.legitimacy)));
         }
         return rows;
@@ -364,7 +391,7 @@ public record CountryDetailsPayload(
         if (e == null) return new ElectionInfo("", "", 0, List.of(), "", false, petition, needed, signed, cooldown);
         List<Candidate> candidates = new ArrayList<>();
         for (Map.Entry<UUID, String> c : e.candidates.entrySet()) {
-            candidates.add(new Candidate(c.getValue(), e.votesFor(c.getKey())));
+            candidates.add(new Candidate(c.getValue(), e.votesFor(c.getKey()), e.programs.getOrDefault(c.getKey(), "")));
         }
         UUID vote = e.votes.get(me);
         String myVote = vote == null ? "" : e.candidates.getOrDefault(vote, "");
@@ -440,6 +467,7 @@ public record CountryDetailsPayload(
         buf.writeInt(e.debt());
         buf.writeInt(e.settlementIncome());
         buf.writeInt(e.nonCoreLoss());
+        buf.writeInt(e.villagerIncome());
 
         buf.writeCollection(p.flags, (b, f) -> {
             b.writeUtf(f.target());
@@ -460,6 +488,8 @@ public record CountryDetailsPayload(
             b.writeVarInt(c.nonCore);
             Breakdown.write(b, c.unrest);
             b.writeInt(c.taxPercent);
+            b.writeVarInt(c.villagers);
+            b.writeUtf(c.mayorProgram);
         });
         buf.writeVarInt(p.laws);
         buf.writeVarInt(p.lawCooldown);
@@ -471,6 +501,7 @@ public record CountryDetailsPayload(
         buf.writeCollection(el.candidates, (b, c) -> {
             b.writeUtf(c.name);
             b.writeVarInt(c.votes);
+            b.writeUtf(c.program);
         });
         buf.writeUtf(el.myVote);
         buf.writeBoolean(el.candidate);
@@ -578,6 +609,12 @@ public record CountryDetailsPayload(
             b.writeVarInt(a.level());
             b.writeVarInt(a.tab());
         });
+        net.krona.politicsmod.statecraft.StatecraftService.write(buf, p.statecraft);
+        buf.writeCollection(p.villagers, (b, v) -> {
+            b.writeUtf(v.name);
+            b.writeUtf(v.city);
+            b.writeUtf(v.profession);
+        });
     }
 
     private static CountryDetailsPayload read(FriendlyByteBuf buf) {
@@ -595,21 +632,21 @@ public record CountryDetailsPayload(
                 buf.readUtf(), buf.readInt(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-                buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt());
+                buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt());
 
         List<FlagOverride> flags = buf.readList(b -> new FlagOverride(b.readUtf(), b.readUtf(), b.readBoolean()));
         int flagDefaults = buf.readVarInt();
 
         String capital = buf.readUtf();
         List<City> cities = buf.readList(b -> new City(b.readUtf(), b.readUtf(), b.readInt(), b.readVarInt(), b.readVarInt(),
-                b.readVarInt(), b.readInt(), b.readVarInt(), Breakdown.read(b), b.readInt()));
+                b.readVarInt(), b.readInt(), b.readVarInt(), Breakdown.read(b), b.readInt(), b.readVarInt(), b.readUtf()));
         int laws = buf.readVarInt();
         int lawCooldown = buf.readVarInt();
 
         String elType = buf.readUtf();
         String elCity = buf.readUtf();
         int elLeft = buf.readVarInt();
-        List<Candidate> candidates = buf.readList(b -> new Candidate(b.readUtf(), b.readVarInt()));
+        List<Candidate> candidates = buf.readList(b -> new Candidate(b.readUtf(), b.readVarInt(), b.readUtf()));
         ElectionInfo election = new ElectionInfo(elType, elCity, elLeft, candidates, buf.readUtf(), buf.readBoolean(),
                 buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readVarInt());
 
@@ -645,10 +682,12 @@ public record CountryDetailsPayload(
         })));
         List<net.krona.politicsmod.realm.Alerts.Alert> alerts = buf.readList(b -> new net.krona.politicsmod.realm.Alerts.Alert(
                 b.readUtf(), b.readList(FriendlyByteBuf::readUtf), b.readVarInt(), b.readVarInt()));
+        net.krona.politicsmod.statecraft.StatecraftService.View statecraft = net.krona.politicsmod.statecraft.StatecraftService.read(buf);
+        List<VillagerInfo> villagers = buf.readList(b -> new VillagerInfo(b.readUtf(), b.readUtf(), b.readUtf()));
 
         return new CountryDetailsPayload(members, relations, pendingFrom, pendingType, warCost, secedeThreshold, permissions,
                 economy, flags, flagDefaults, capital, cities, laws, lawCooldown, election, sieges, loans, offer, news,
                 siegeCost, maxLoanInterest, maxLoanCycles, landPrices, settlementsEnabled, annexReputation, settlements,
-                realm, nonCore, lostCores, chunkIncome, ledger, history, alerts);
+                realm, nonCore, lostCores, chunkIncome, ledger, history, alerts, statecraft, villagers);
     }
 }

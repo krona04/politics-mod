@@ -1,0 +1,42 @@
+{
+  "mean_time": 120,
+  "conditions": [
+    {
+      "type": "wars",
+      "max": 0
+    },
+    {
+      "type": "stability",
+      "min": 0
+    }
+  ],
+  "city": true,
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -200
+        },
+        {
+          "type": "development",
+          "amount": 1
+        },
+        {
+          "type": "modifier",
+          "modifier": "unrest",
+          "value": 5,
+          "cycles": 20
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "prestige",
+          "amount": -2
+        }
+      ]
+    }
+  ]
+}

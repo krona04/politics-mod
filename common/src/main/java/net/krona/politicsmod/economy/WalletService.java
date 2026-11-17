@@ -69,6 +69,17 @@ public final class WalletService {
         return wallet.balance();
     }
 
+    /** Money a state event or decision gives (positive) or takes (negative); clamped to the wallet limits. */
+    public static void stateGrant(PoliticsManager mgr, UUID player, int delta, String country) {
+        Wallet wallet = mgr.getWallet(player);
+        long target = Math.max(0L, Math.min((long) wallet.balance() + delta, PoliticsConfig.get().walletMaxBalance));
+        int applied = (int) (target - wallet.balance());
+        if (applied != 0) {
+            wallet.apply(applied, WalletTransaction.TYPE_STATE, country, PoliticsConfig.get().walletHistorySize);
+            mgr.setDirty();
+        }
+    }
+
     // ── Market ───────────────────────────────────────────────────────────
 
     /** Takes money from a buyer's wallet. The caller has already checked the balance. */

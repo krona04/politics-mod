@@ -1,0 +1,33 @@
+{
+  "mean_time": 90,
+  "conditions": [
+    {
+      "type": "overextension",
+      "min": 30
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -400
+        },
+        {
+          "type": "modifier",
+          "modifier": "unrest",
+          "value": -10,
+          "cycles": 30
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": -15
+        }
+      ]
+    }
+  ]
+}

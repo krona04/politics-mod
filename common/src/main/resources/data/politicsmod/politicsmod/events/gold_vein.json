@@ -1,0 +1,35 @@
+{
+  "mean_time": 150,
+  "conditions": [
+    {
+      "type": "tax_blocks",
+      "min": 4
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": 800
+        },
+        {
+          "type": "stability",
+          "amount": -5
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "wallets",
+          "amount": 100
+        },
+        {
+          "type": "legitimacy",
+          "amount": 5
+        }
+      ]
+    }
+  ]
+}

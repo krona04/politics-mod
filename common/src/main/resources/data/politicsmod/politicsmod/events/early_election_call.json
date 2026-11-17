@@ -1,0 +1,41 @@
+{
+  "mean_time": 160,
+  "conditions": [
+    {
+      "type": "legitimacy",
+      "max": 55
+    },
+    {
+      "type": "citizens",
+      "min": 3
+    },
+    {
+      "type": "election",
+      "value": false
+    },
+    {
+      "type": "election_ready"
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "election"
+        },
+        {
+          "type": "legitimacy",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "legitimacy",
+          "amount": -6
+        }
+      ]
+    }
+  ]
+}

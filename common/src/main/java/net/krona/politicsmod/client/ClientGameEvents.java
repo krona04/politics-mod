@@ -13,5 +13,8 @@ public class ClientGameEvents {
                 ModNetworking.toServer(new RequestOpenMenuPayload());
             }
         }
+        while (ModKeyMappings.HUD_MODE.consumeClick()) {
+            if (minecraft.screen == null) minecraft.setScreen(new HudSettingsScreen());
+        }
     }
 }

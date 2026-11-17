@@ -32,7 +32,8 @@ import java.util.List;
  */
 public class CountryDashboardScreen extends PoliticsScreen {
 
-    private static final String[] TAB_KEYS = {"main", "map", "citizens", "politics", "diplomacy", "economy", "ledger", "news", "settlements"};
+    private static final String[] TAB_KEYS = {"main", "map", "citizens", "politics", "diplomacy", "economy", "ledger", "news",
+            "statecraft", "settlements"};
     private static final int HEADER = 24;
     /** Ticks to wait after a command before requesting fresh data (commands are not processed instantly). */
     private static final int REFRESH_DELAY_TICKS = 10;
@@ -52,7 +53,8 @@ public class CountryDashboardScreen extends PoliticsScreen {
     private int activeTab;
     private int px, py, pw, ph, sidebar;
     private int refreshInTicks = -1;
-    private static final int SETTLEMENTS_TAB = 8;
+    private static final int SETTLEMENTS_TAB = 9;
+    private static final int STATECRAFT_TAB = 8;
 
     /** Alert icons drawn in the header this frame, for hover and clicks. */
     private record AlertIcon(int x, net.krona.politicsmod.realm.Alerts.Alert alert) {
@@ -72,7 +74,8 @@ public class CountryDashboardScreen extends PoliticsScreen {
         this.playerRole = playerRole;
         this.tabs = new DashboardTab[]{
                 new OverviewTab(this), new MapTab(this), new CitizensTab(this), new PoliticsTab(this),
-                new DiplomacyTab(this), new EconomyTab(this), new LedgerTab(this), new NewsTab(this), new SettlementsTab(this)};
+                new DiplomacyTab(this), new EconomyTab(this), new LedgerTab(this), new NewsTab(this),
+                new net.krona.politicsmod.client.dashboard.StatecraftTab(this), new SettlementsTab(this)};
         this.activeTab = Math.min(lastTab, tabs.length - 1);
     }
 
@@ -234,9 +237,23 @@ public class CountryDashboardScreen extends PoliticsScreen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
+        renderEventBadge(g);
         tabs[activeTab].renderOverlay(g, mouseX, mouseY);
         tabs[activeTab].renderHover(g, mouseX, mouseY);
         renderAlertTooltip(g, mouseX, mouseY);
+    }
+
+    /** A gold count on the Decisions tab while events wait for an answer (0.5.1). */
+    private void renderEventBadge(GuiGraphics g) {
+        CountryDetailsPayload d = ClientPoliticsData.countryDetails;
+        int events = d != null ? d.statecraft().events().size() : ClientPoliticsData.pendingEvents;
+        if (events <= 0) return;
+        String text = String.valueOf(events);
+        int bw = Math.max(9, font.width(text) + 4);
+        int bx = px + sidebar - 6 - bw;
+        int by = py + 40 + STATECRAFT_TAB * 18 + 4;
+        g.fill(bx, by, bx + bw, by + 9, UiKit.ACCENT);
+        g.drawString(font, text, bx + (bw - font.width(text) + 1) / 2, by + 1, 0xFF1B1E25, false);
     }
 
     // ── Alerts ───────────────────────────────────────────────────────────
@@ -281,6 +298,7 @@ public class CountryDashboardScreen extends PoliticsScreen {
             case "petition" -> "✎";
             case "laws_ready" -> "⚖";
             case "proposal" -> "✉";
+            case "event" -> "★";
             default -> "!";
         };
     }

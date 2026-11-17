@@ -1,0 +1,15 @@
+{
+  "order": 80,
+  "conditions": [
+    {
+      "type": "allies",
+      "min": 5
+    }
+  ],
+  "reward": [
+    {
+      "type": "prestige",
+      "amount": 15
+    }
+  ]
+}

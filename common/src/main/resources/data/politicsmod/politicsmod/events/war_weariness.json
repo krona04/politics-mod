@@ -1,0 +1,31 @@
+{
+  "mean_time": 70,
+  "conditions": [
+    {
+      "type": "wars",
+      "min": 1
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "legitimacy",
+          "amount": -5
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "prestige",
+          "amount": -3
+        },
+        {
+          "type": "stability",
+          "amount": 20
+        }
+      ]
+    }
+  ]
+}

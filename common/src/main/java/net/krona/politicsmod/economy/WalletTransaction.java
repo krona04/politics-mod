@@ -23,6 +23,8 @@ public record WalletTransaction(long time, int amount, String type, String party
     public static final String TYPE_SALE = "sale";
     public static final String TYPE_PLOT = "plot";
     public static final String TYPE_RENT = "rent";
+    /** Money a state event or decision gave or took (0.5.1); party = the country. */
+    public static final String TYPE_STATE = "state";
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();

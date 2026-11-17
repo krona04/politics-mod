@@ -12,4 +12,12 @@ public class ModKeyMappings {
             GLFW.GLFW_KEY_K,
             "key.categories.politicsmod"
     );
+
+    /** Cycles how the country info in the corner is shown (0.5.1). */
+    public static final KeyMapping HUD_MODE = new KeyMapping(
+            "key.politicsmod.hud_mode",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_H,
+            "key.categories.politicsmod"
+    );
 }

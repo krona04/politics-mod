@@ -20,6 +20,19 @@ public class ClientPoliticsData {
     /** The player's own country, "" if none. */
     public static String myCountry = "";
     public static String currentCity = "";
+    /** The player stands on the land of a country. */
+    public static boolean inTerritory = false;
+    /** Events of the player's country waiting for an answer, and whether the player may answer them (0.5.1). */
+    public static int pendingEvents = 0;
+    public static boolean canAnswerEvents = false;
+
+    // The name of the land the player just entered, shown big for a moment (0.5.1)
+    public static String bannerTitle = "";
+    public static String bannerSubtitle = "";
+    public static int bannerColor = 0xFFFFFF;
+    public static long bannerShownAt = 0L;
+    /** Country and city of the last HUD update; null before the first one. */
+    private static String lastCountry = null, lastCity = null;
     public static int myTreasury = net.krona.politicsmod.network.SyncHudPayload.NO_COUNTRY;
     public static int myWallet = 0;
     public static boolean plotHere = false;
@@ -93,6 +106,28 @@ public class ClientPoliticsData {
     }
 
     public static void updateHud(net.krona.politicsmod.network.SyncHudPayload hud) {
+        if (!hud.country().equals(lastCountry) || !hud.city().equals(lastCity)) {
+            boolean countryChanged = !hud.country().equals(lastCountry);
+            if (hud.country().isEmpty()) {
+                bannerTitle = net.minecraft.network.chat.Component.translatable("gui.politicsmod.hud.wilderness").getString();
+                bannerSubtitle = "";
+                bannerColor = 0xAAAAAA;
+            } else {
+                // Moving between cities of one country shows the city; entering a country shows both
+                bannerTitle = countryChanged || hud.city().isEmpty() ? hud.country() : hud.city();
+                bannerSubtitle = countryChanged ? hud.city() : "";
+                bannerColor = !countryChanged && !hud.city().isEmpty() ? 0xFFD700
+                        : hud.country().equals(hud.myCountry()) ? 0x55FF55 : 0xFFFFFF;
+            }
+            // Leaving a city for the country's open land is not worth a banner
+            if (!countryChanged && hud.city().isEmpty()) bannerTitle = "";
+            else bannerShownAt = System.currentTimeMillis();
+            lastCountry = hud.country();
+            lastCity = hud.city();
+        }
+        inTerritory = !hud.country().isEmpty();
+        pendingEvents = hud.events();
+        canAnswerEvents = hud.canAnswer();
         currentCountry = hud.country().isEmpty()
                 ? net.minecraft.network.chat.Component.translatable("gui.politicsmod.hud.wilderness").getString()
                 : hud.country();
@@ -118,6 +153,13 @@ public class ClientPoliticsData {
         territoryVersion++;
         currentCountry = "";
         currentCity = "";
+        inTerritory = false;
+        pendingEvents = 0;
+        canAnswerEvents = false;
+        bannerTitle = "";
+        bannerSubtitle = "";
+        lastCountry = null;
+        lastCity = null;
         myCountry = "";
         myTreasury = net.krona.politicsmod.network.SyncHudPayload.NO_COUNTRY;
         myWallet = 0;

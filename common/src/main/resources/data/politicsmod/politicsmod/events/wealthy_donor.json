@@ -1,0 +1,31 @@
+{
+  "mean_time": 130,
+  "conditions": [
+    {
+      "type": "legitimacy",
+      "min": 50
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": 600
+        },
+        {
+          "type": "legitimacy",
+          "amount": -3
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "legitimacy",
+          "amount": 3
+        }
+      ]
+    }
+  ]
+}

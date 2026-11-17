@@ -6,7 +6,7 @@
 
 > ⚠️ **EARLY DEVELOPMENT WARNING**
 >
-> This mod is currently in **Early Access (v0.5)**. Features are subject to change and bugs may occur.
+> This mod is currently in **Early Access (v0.5.1)**. Features are subject to change and bugs may occur.
 >
 > * **Loaders:** NeoForge, Forge (1.20.1) & Fabric
 > * **Minecraft Version:** 1.21.1 & 1.20.1
@@ -48,6 +48,15 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 - **Map modes, Ledger and alerts** — Color the map by relations, countries, income, stability, unrest or cores; compare all countries and their history on the **Ledger** tab; icons in the dashboard header show what needs attention.
 - Server owners can switch the whole layer off with `realmEnabled: false`.
 
+### 📜 Events, Decisions & Goals
+- **Events** — Now and then something happens to your country: a rich harvest, a fire in a city, a tax revolt, a foreign envoy, a spy, war weariness. The leader picks one of two or three answers, each with its own consequences shown on hover. If nobody answers in time, the default answer happens. While the leader is offline, a mayor may answer as regent.
+- **Decisions** — One-off actions the leader takes when the country is ready: move the capital, proclaim a **kingdom** and later an **empire** (a higher rank brings more tax and embassy income), found a trading company, hold a national festival, start public works in a city, grant a city charter.
+- **Goals** — Tasks with a reward: found three cities, pay off the debts, five allies, a full treasury and more. Progress bars show how close the country is.
+- **You will notice**: a new event comes with a toast, a bell and a line in chat. Until it is answered, the HUD shows "★ An event waits for your answer" and the **Decisions** tab carries a count. Members who were offline are reminded when they join.
+- Everything is on the new **Decisions** tab of the dashboard and in chat (`/politicsmod event`, `/politicsmod decision`, `/politicsmod goals`). 42 events, 7 decisions and 11 goals come with the mod.
+- **Datapacks** — Events, decisions and goals are plain JSON: servers can add their own or switch the built-in ones off.
+- Events, decisions and goals are translated into all 20 languages.
+
 ### 🏙️ Cities & Territory
 - **City Stones** — Place a City Stone to found a city within your territory.
 - **Chunk Claiming** — Select chunks on the Map tab and assign them to your country or a city, or use `/politicsmod claim`.
@@ -59,6 +68,7 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 - Invite, kick and promote players from the **Citizens** tab (leaders and mayors).
 - Kicking and changing roles requires the player to be online.
 - What mayors and citizens may do is configurable per server (see Configuration).
+- **Villager citizens** — Vanilla villagers living inside a city become its citizens: they are listed on the **Citizens** tab (switch to **Villagers**), count in the population and pay a little tax to their city.
 
 ### 👛 Wallet & Salaries
 - Every player has a personal **wallet**: `/politicsmod wallet` shows the balance and history, `send` pays another player, `donate` gives to your treasury.
@@ -105,6 +115,7 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 
 ### 🗳️ Elections & Laws
 - The leader calls elections for leader or mayor; citizens run and vote. A petition of half the citizens forces a leader election.
+- **Villager candidates** — In a mayor election of a city with at least three villagers, one of them runs too, with a program: **Taxes** (more tax, a little more unrest), **Order** (less unrest, a little less tax) or **Building** (buys development from the city treasury by itself). Players vote; an elected villager stays mayor until the next election.
 - Laws: **Closed Borders**, **Martial Law**, **Free Trade** — on the Politics tab or with `/politicsmod law`.
 
 ### ⚔️ Sieges
@@ -136,7 +147,13 @@ Whether you are running a small kingdom or a massive empire on an RP server, thi
 - A 16-page **guide book** in your own language, given on first join. Craft another from a book and a gold nugget, or use `/politicsmod guide`.
 
 ### 📊 HUD
-- Current country, city and plot, your nation's treasury, your wallet, and active radar alerts.
+- A small card in the corner: the flag and the name of the land you stand on, coloured by relation (yours, ally, enemy, neutral, wilderness), then the city, the plot, your nation's treasury, your wallet, radar alerts and waiting events. Each line has an item icon.
+- Hidden with **F1** like the rest of the HUD, and while the F3 screen is open.
+- Press **H** (or `/politicsmod hud`) to open the panel settings, saved per player:
+  - **when** it shows: always, only on country land, only on entering (just the big name of the land you enter) or off;
+  - **look**: card, one line or text only;
+  - **size**: 75–150%;
+  - **position**: six places on the screen.
 
 ---
 
@@ -202,6 +219,10 @@ Most actions are also available in the dashboard (`K`).
 |---|---|---|
 | `/politicsmod realm` | Member | Stability, legitimacy, prestige, cores and cities, with reasons on hover |
 | `/politicsmod realm stabilize` | Leader | Spend treasury money to restore order |
+| `/politicsmod event` | Member | Events waiting for an answer, with clickable choices |
+| `/politicsmod event answer <id> <choice>` | Leader (mayor while the leader is offline) | Answer an event |
+| `/politicsmod decision` / `decision take <id> [city]` | Member / Leader | Decisions of the country / take one |
+| `/politicsmod goals` | Member | Goals and their progress |
 | `/politicsmod election` | Member | Current election and petition |
 | `/politicsmod election start leader` / `start mayor <city>` | Leader | Call an election |
 | `/politicsmod election run` / `vote <name>` | Member | Stand as a candidate / vote |
@@ -267,15 +288,17 @@ Flags: `pvp`, `explosions`, `mob_explosions`, `fire_spread`, `item_pickup`, `ent
 | `/politicsmod guide` | Anyone | Get the guide book |
 | `/politicsmod borders` | Anyone | Toggle border rendering |
 | `/politicsmod borders style` | Anyone | Switch border style |
+| `/politicsmod hud [always\|territory\|banner\|off]` | Anyone | Panel settings (key H); with a word, just when the panel shows |
 | `/politicsmod reload` | Operator | Reload `config/politicsmod.json` |
 | `/politicsmod wallet give` / `take <player> <amount>` | Operator | Adjust a wallet |
 | `/politicsmod modifier add <type> <percent> <minutes> "<name>" <country>` | Operator | Timed modifier for a server event (`tax_income`, `embassy_income`, `upkeep`, `land_price`, `siege_defense`; 0 minutes = until removed) |
 | `/politicsmod modifier list <country>` / `remove <id> <country>` | Operator | Stored modifiers of a country |
+| `/politicsmod event fire <id> <country>` | Operator | Start an event for a country (testing, server events) |
 
 ### Permissions
 
 Every command group has a permission node `politicsmod.command.<group>` for LuckPerms and similar mods:
-`info`, `members`, `claim`, `rename`, `pay`, `tax`, `city`, `territory`, `embassy`, `diplomacy`, `wallet`, `salary`, `plot`, `flag`, `borders`, `delete`, `guide`, `help`, `election`, `law`, `siege`, `loan`, `news`, `settlement` (everyone by default), `reload` and `admin` (operators by default).
+`info`, `members`, `claim`, `rename`, `pay`, `tax`, `city`, `territory`, `embassy`, `diplomacy`, `wallet`, `salary`, `plot`, `flag`, `borders`, `delete`, `guide`, `help`, `election`, `law`, `siege`, `loan`, `news`, `settlement`, `realm`, `statecraft`, `hud` (everyone by default), `reload` and `admin` (operators by default).
 
 ---
 
@@ -300,6 +323,9 @@ Server settings live in `config/politicsmod.json` and are created on first launc
 | Debt | `maxDebt`, `maxLoanInterestPercent`, `maxLoanCycles` |
 | News & maps | `newsMaxEntries`, `webMapsEnabled`, `webMapUpdateSeconds` |
 | Settlements | `minecoloniesEnabled`, `colonyTaxPerCitizen`, `colonyTaxFollowsHappiness`, `colonyRanksFollowDiplomacy`, `millenaireEnabled`, `villageTaxPerVillager`, `villageAnnexReputation`, `villageKeepReputation`, `annexedVillageTributePercent`, `settlementsBlockClaims` |
+| Realm | `realmEnabled`, `startingStability`, `stabilityTaxPercent`, `stabilityProgressPerLevel`, `stabilizeBaseCost`, `stabilizeProgress`, `stabilizeCooldownMinutes`, `coreCycles`, `nonCoreTaxPercent`, `developmentCost`, `maxDevelopment`, `developmentTaxPercent`, `unrestSecedeThreshold`, `prestigeDecayPerMille`, `ledgerHistoryDays` |
+| Statecraft | `statecraftEnabled`, `eventMinGapCycles`, `eventTimeoutCycles`, `maxPendingEvents`, `eventsNeedOnlineMember`, `eventFrequencyPercent` |
+| Villagers | `villagerCitizensEnabled`, `villagerTaxPerCycle`, `villagerCandidates`, `villagerCandidateMinVillagers` |
 | Guide | `giveGuideOnFirstJoin` |
 | Radar | `radarRangeChunks`, `radarCheckTicks` |
 

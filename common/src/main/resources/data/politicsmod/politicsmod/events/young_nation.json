@@ -1,0 +1,28 @@
+{
+  "mean_time": 20,
+  "once": true,
+  "conditions": [
+    {
+      "type": "country_age",
+      "max": 40
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "legitimacy",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": 25
+        }
+      ]
+    }
+  ]
+}

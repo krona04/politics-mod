@@ -1,0 +1,37 @@
+{
+  "order": 90,
+  "conditions": [
+    {
+      "type": "debt",
+      "max": 0
+    },
+    {
+      "type": "bankrupt",
+      "value": false
+    }
+  ],
+  "reward": [
+    {
+      "type": "stability",
+      "amount": 20
+    },
+    {
+      "type": "legitimacy",
+      "amount": 5
+    }
+  ],
+  "start": [
+    {
+      "type": "any",
+      "conditions": [
+        {
+          "type": "debt",
+          "min": 1
+        },
+        {
+          "type": "bankrupt"
+        }
+      ]
+    }
+  ]
+}

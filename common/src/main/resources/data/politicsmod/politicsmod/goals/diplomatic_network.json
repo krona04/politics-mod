@@ -1,0 +1,20 @@
+{
+  "order": 70,
+  "conditions": [
+    {
+      "type": "embassies",
+      "min": 3
+    }
+  ],
+  "reward": [
+    {
+      "type": "prestige",
+      "amount": 5
+    },
+    {
+      "type": "modifier",
+      "modifier": "embassy_income",
+      "value": 10
+    }
+  ]
+}

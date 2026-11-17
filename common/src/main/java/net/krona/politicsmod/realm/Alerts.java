@@ -24,7 +24,7 @@ public final class Alerts {
     public static final int INFO = 0, WARN = 1, DANGER = 2;
 
     // Dashboard tabs, in CountryDashboardScreen order
-    public static final int TAB_MAIN = 0, TAB_MAP = 1, TAB_POLITICS = 3, TAB_DIPLOMACY = 4, TAB_ECONOMY = 5;
+    public static final int TAB_MAIN = 0, TAB_MAP = 1, TAB_POLITICS = 3, TAB_DIPLOMACY = 4, TAB_ECONOMY = 5, TAB_STATECRAFT = 8;
 
     /** How long after the law cooldown ends the leader is told laws can change again. */
     private static final long LAW_READY_SHOWN_MS = 30 * 60_000L;
@@ -91,6 +91,10 @@ public final class Alerts {
         }
 
         // Waiting for an answer
+        if (!c.statecraft.pending.isEmpty() && net.krona.politicsmod.statecraft.StatecraftService.enabled()) {
+            boolean answer = net.krona.politicsmod.statecraft.StatecraftService.mayAnswer(c, viewer);
+            list.add(alert("alert.politicsmod.event", answer ? WARN : INFO, TAB_STATECRAFT, String.valueOf(c.statecraft.pending.size())));
+        }
         if (leader && ModCommands.getPendingDiplomacy(c.getName()) != null) {
             list.add(alert("alert.politicsmod.proposal", INFO, TAB_DIPLOMACY, ModCommands.getPendingDiplomacy(c.getName())[0]));
         }

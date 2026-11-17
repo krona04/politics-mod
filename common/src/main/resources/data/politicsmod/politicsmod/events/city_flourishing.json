@@ -1,0 +1,28 @@
+{
+  "mean_time": 140,
+  "city": true,
+  "city_conditions": [
+    {
+      "type": "city_development",
+      "min": 3
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "city_treasury",
+          "amount": 400
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": 300
+        }
+      ]
+    }
+  ]
+}

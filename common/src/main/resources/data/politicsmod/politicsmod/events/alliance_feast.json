@@ -1,0 +1,35 @@
+{
+  "mean_time": 140,
+  "conditions": [
+    {
+      "type": "allies",
+      "min": 2
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -500
+        },
+        {
+          "type": "prestige",
+          "amount": 6
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "treasury",
+          "amount": -150
+        },
+        {
+          "type": "prestige",
+          "amount": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "order": 30,
+  "conditions": [
+    {
+      "type": "villagers",
+      "min": 20
+    }
+  ],
+  "reward": [
+    {
+      "type": "development",
+      "amount": 1
+    },
+    {
+      "type": "legitimacy",
+      "amount": 5
+    }
+  ]
+}

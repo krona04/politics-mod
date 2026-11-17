@@ -1,0 +1,46 @@
+{
+  "mean_time": 70,
+  "city": true,
+  "city_conditions": [
+    {
+      "type": "city_unrest",
+      "min": 40
+    }
+  ],
+  "options": [
+    {
+      "effects": [
+        {
+          "type": "city_modifier",
+          "modifier": "tax_income",
+          "value": -15,
+          "cycles": 30
+        },
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": -20,
+          "cycles": 30
+        }
+      ]
+    },
+    {
+      "effects": [
+        {
+          "type": "stability",
+          "amount": -15
+        },
+        {
+          "type": "legitimacy",
+          "amount": -5
+        },
+        {
+          "type": "city_modifier",
+          "modifier": "unrest",
+          "value": -10,
+          "cycles": 20
+        }
+      ]
+    }
+  ]
+}
